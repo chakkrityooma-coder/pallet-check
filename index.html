@@ -193,7 +193,12 @@ table.res thead tr.grp th { text-align:left; }
 table.res thead tr.grp th.leg { text-align:center; border-bottom:1px solid var(--border); }
 table.res thead th.leg-out { background:var(--wait-bg); color:var(--wait); }
 table.res thead th.leg-in { background:var(--ok-bg); color:var(--ok); }
-table.res tbody td.pal-out, table.res tbody td.pal-in { font-size:1.0625rem; font-weight:700; }
+table.res tbody td.pal-out, table.res tbody td.pal-in { font-size:1.375rem; font-weight:800; line-height:1.2; }
+table.res tbody td.pal-out { background:var(--surface-2); }
+table.res tbody td.pi-ok { background:var(--ok-bg); color:var(--ok); } table.res tbody td.pi-short { background:var(--short-bg); color:var(--short); }
+table.res tbody td.pi-over { background:var(--over-bg); color:var(--over); } table.res tbody td.pi-no_return { background:var(--miss-bg); color:var(--miss); }
+table.res tbody td.pi-pending { background:var(--wait-bg); color:var(--wait); } table.res tbody td.pi-zero { background:var(--zero-bg); color:var(--zero); }
+td.pal-out .sub, td.pal-in .sub { font-size:.75rem; font-weight:400; }
 table.res tbody td.leg-in, table.res thead th.bl { border-left:1px solid var(--border); }
 td.status .sub { margin-top:3px; max-width:180px; }
 .detail-notes { margin:0 0 10px; }
@@ -317,6 +322,10 @@ table.ck th, table.ck td { font-size:.875rem; }
   tr.main > td { display:block; border:0; padding:3px 0; text-align:left !important; }
   tr.main > td[data-label]::before { content:attr(data-label); display:block; color:var(--muted); font-size:.75rem; font-weight:400; }
   tr.main > td.plate, tr.main > td.notes, tr.main > td.plan, tr.main > td.status { grid-column:1 / -1; }
+  tr.main > td.plate { order:1; } tr.main > td.status { order:2; } tr.main > td.pal-out { order:3; } tr.main > td.pal-in { order:4; }
+  tr.main > td.leg-out { order:5; } tr.main > td.leg-in { order:6; } tr.main > td.plan { order:7; }
+  tr.main > td.pal-out, tr.main > td.pal-in { border-radius:10px; padding:8px 12px; text-align:left !important; font-size:1.75rem; }
+  tr.main > td.pal-out::before, tr.main > td.pal-in::before { font-size:.75rem; font-weight:600; }
   tr.main > td.pal-in, tr.main > td.leg-in { border-left:0 !important; }
   td.plan { max-width:none; min-width:0; }
   tr.main > td.plate::before, tr.main > td.status::before { display:none; }
@@ -354,7 +363,7 @@ table.ck th, table.ck td { font-size:.875rem; }
   <section class="card databar" id="databar" aria-label="ข้อมูลที่ใช้ตรวจ">
     <p class="databar-sum" id="data-sum" role="status" aria-live="polite">ยังไม่มีข้อมูล</p>
     <div class="databar-act">
-      <button type="button" class="btn primary" id="btn-drive" hidden>ดึงไฟล์ล่าสุดใหม่จาก Drive</button>
+      <button type="button" class="btn primary" id="btn-drive" hidden>ดึงใหม่จาก Drive</button>
       <button type="button" class="btn" id="btn-inputs" aria-expanded="true" aria-controls="inputs">ไฟล์และชีตที่ใช้</button>
     </div>
   </section>
@@ -364,11 +373,12 @@ table.ck th, table.ck td { font-size:.875rem; }
     <div class="drive-head">
       <div>
         <h2 id="h-drive">ดึงจาก Google Drive อัตโนมัติ</h2>
-        <p class="hint">ไฟล์ล่าสุดของภาคจ่ายทั้ง 5 (รถและพาเลท) · สรุปคลังจ่าย สนญ. (เวลาปล่อยรถเท่านั้น) · รับภูมิภาค — ใช้สิทธิ์ Drive ของคุณ ไม่เก็บไฟล์ไว้ที่ไหน</p>
+        <p class="hint" id="drive-hint">ขาออก = ไฟล์ล่าสุดของภาคจ่ายทั้ง 5 (จ่ายเหนือ · จ่ายกลาง · จ่ายอีสาน · จ่ายใต้ · กทม) · ขารับเข้า = หน้าบ้าน (รับภูมิภาค) — ใช้สิทธิ์ Drive ของคุณ ไม่เก็บไฟล์ไว้ที่ไหน</p>
       </div>
     </div>
     <ul class="drive-list" id="drive-list" role="status" aria-live="polite"></ul>
     <p class="drive-msg" id="drive-msg" role="status" aria-live="polite"></p>
+    <p class="drive-reset"><button type="button" class="btn link" id="btn-drive-reset" hidden>ล้างค่าตั้งต้น Drive ในเครื่องนี้</button></p>
   </section>
 
   <div class="sides">
@@ -420,7 +430,7 @@ table.ck th, table.ck td { font-size:.875rem; }
         <label>ออกห่างจากวันสุดท้ายของข้อมูลรับเข้าไม่ถึง <input class="num" type="number" id="grace" min="0" step="1" value="2" inputmode="numeric"> วัน
           และยังไม่พบรับเข้า → ขึ้น “รอรับเข้า”</label>
       </div>
-      <div>
+      <div id="opt-hq" hidden>
         <p class="opt-title">เวลาปล่อยรถ</p>
         <label class="radio" style="padding:0"><input type="checkbox" id="use-hq" checked>
           <span>ใช้เวลาปล่อยรถจากสรุปคลังจ่าย (สนญ.)<small>ถ้าปิด ใช้เวลาโหลดเสร็จจากภาคจ่ายแต่ละภาคแทน</small></span></label>
@@ -1570,7 +1580,283 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 });
 
 </script>
-<script>/* ฉบับสาธารณะ: ไม่รวมตัวดึงไฟล์จาก Google Drive */</script>
+<script>
+/* ดึงไฟล์ล่าสุดจาก Google Drive อัตโนมัติ (ผ่านตัวเชื่อม Google Drive ของ claude.ai)
+ *
+ * มี 2 โหมด (เลือกให้เองตามที่เปิดหน้านี้):
+ *  1) 'mcp' — เปิดใน claude.ai (Artifact ที่ประกาศความสามารถ mcp): ผู้ใช้อนุญาตครั้งแรก เรียกด้วยสิทธิ์ผู้ใช้เอง ไม่มีโทเคนในหน้านี้
+ *  2) 'web' — เปิดเป็นเว็บทั่วไป (เช่น GitHub Pages): เรียก Google Drive API ด้วย API key ของผู้ใช้ — ใช้ได้กับโฟลเดอร์ที่แชร์แบบ “ใครมีลิงก์”
+ *     ค่าตั้งต้น (API key + รหัสโฟลเดอร์) ไม่อยู่ในไฟล์เว็บ: อยู่ใน “ลิงก์ส่วนตัว” ท้าย URL แบบ  #k=KEY&n=..&c=..&e=..&s=..&b=..&i=..
+ *     เปิดลิงก์นั้นครั้งแรก หน้าเว็บเก็บค่าไว้ในเบราว์เซอร์เครื่องนี้ (localStorage) แล้วลบออกจากแถบที่อยู่
+ *     (n=เหนือ c=กลาง e=อีสาน s=ใต้ b=กทม i=หน้าบ้าน/รับภูมิภาค)
+ * เปิดเป็นไฟล์ในเครื่อง (file://) หรือไม่มีค่าตั้งต้น จะไม่แสดงส่วนนี้ และยังเลือกไฟล์เองได้ตามปกติ
+ *
+ * ไฟล์ที่ดึง = ไฟล์ล่าสุดในแต่ละโฟลเดอร์ (รหัสโฟลเดอร์ตามคำสั่ง Routine ของ repo นี้ — แก้ได้ที่ SOURCES):
+ *   ขาออก (โฟลเดอร์ จ่ายเหนือ/จ่ายกลาง/จ่ายอีสาน/จ่ายใต้/กทม): ภาคจ่ายทั้ง 5 (Data Outbound — รถและพาเลท)
+ *   ขารับเข้า (โฟลเดอร์ หน้าบ้าน (รับภูมิภาค)): แบบฟอร์มการรับสินค้า คลัง สนญ.ใหญ่
+ *   (ไม่ดึงสรุปคลังจ่าย สนญ. — ไม่มีพาเลท ขาออกใช้ภาคจ่ายทั้ง 5 เท่านั้น)
+ */
+(function (root) {
+  'use strict';
+
+  var XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  var SERVER = 'Google Drive';                     // ชื่อตัวเชื่อมที่แสดงใน claude.ai
+  var TOOLS = ['search_files', 'download_file_content'];
+
+  var SOURCES = [
+    { id: 'out-north', side: 'out', label: 'ขาออก · จ่ายเหนือ', folder: '' },
+    { id: 'out-central', side: 'out', label: 'ขาออก · จ่ายกลาง', folder: '' },
+    { id: 'out-east', side: 'out', label: 'ขาออก · จ่ายอีสาน', folder: '' },
+    { id: 'out-south', side: 'out', label: 'ขาออก · จ่ายใต้', folder: '' },
+    { id: 'out-bkk', side: 'out', label: 'ขาออก · กทม', folder: '' },
+    { id: 'in-front', side: 'in', label: 'ขารับเข้า · หน้าบ้าน (รับภูมิภาค)', folder: '' }
+  ];
+
+  var mcpPromise = null;
+  function getMcp() {
+    if (!mcpPromise) {
+      var G = typeof globalThis !== 'undefined' ? globalThis : root;
+      mcpPromise = (G.claude && typeof G.claude.use === 'function')
+        ? Promise.resolve(G.claude.use('mcp')).catch(function () { return null; })
+        : Promise.resolve(null);
+    }
+    return mcpPromise;
+  }
+  /** true เมื่อดึงจาก Drive ได้: เปิดใน claude.ai (mcp) หรือเว็บทั่วไปที่มีค่าตั้งต้น (web) — ผลโหมดอยู่ที่ api.mode */
+  function available() {
+    return getMcp().then(function (m) {
+      if (m) { api.mode = 'mcp'; return true; }
+      if (webConfig()) { api.mode = 'web'; return true; }
+      api.mode = null; return false;
+    });
+  }
+
+  // ---------- โหมดเว็บทั่วไป: Google Drive API + API key ----------
+  var CFG_STORE = 'pallet-check:drive-cfg';
+  var WEB_IDS = { 'out-north': 'n', 'out-central': 'c', 'out-east': 'e', 'out-south': 's', 'out-bkk': 'b', 'in-front': 'i' };
+  function G() { return typeof globalThis !== 'undefined' ? globalThis : root; }
+  /** "#k=KEY&n=ID&..." → { key, ids: { 'out-north': ID, ... } } หรือ null */
+  function parseCfg(text) {
+    var s = String(text || '').replace(/^#/, '');
+    if (!/(^|&)k=/.test(s)) return null;
+    var p = {};
+    s.split('&').forEach(function (kv) {
+      var i = kv.indexOf('='); if (i < 1) return;
+      var v = kv.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) { /* ใช้ค่าดิบ */ }
+      p[kv.slice(0, i)] = v;
+    });
+    if (!p.k) return null;
+    var ids = {};
+    Object.keys(WEB_IDS).forEach(function (sid) { var v = p[WEB_IDS[sid]]; if (v && /^[A-Za-z0-9_-]{10,}$/.test(v)) ids[sid] = v; });
+    return Object.keys(ids).length ? { key: p.k, ids: ids } : null;
+  }
+  /** ค่าตั้งต้นของเว็บ: จากลิงก์ส่วนตัว (แล้วเก็บ + ลบออกจากแถบที่อยู่) หรือที่เก็บไว้ในเครื่อง · ใช้ได้เฉพาะ http(s) */
+  function webConfig() {
+    var g = G(), loc = g.location;
+    if (!loc || !/^https?:$/.test(loc.protocol)) return null;
+    var cfg = parseCfg(loc.hash);
+    if (cfg) {
+      try { g.localStorage.setItem(CFG_STORE, JSON.stringify(cfg)); } catch (e) { /* เก็บไม่ได้ก็ใช้รอบนี้ได้ */ }
+      try { g.history.replaceState(null, '', loc.pathname + (loc.search || '')); } catch (e2) { /* ไม่เป็นไร */ }
+      return cfg;
+    }
+    try { cfg = JSON.parse(g.localStorage.getItem(CFG_STORE) || 'null'); } catch (e3) { cfg = null; }
+    return cfg && cfg.key && cfg.ids && Object.keys(cfg.ids).length ? cfg : null;
+  }
+  function resetWeb() { try { G().localStorage.removeItem(CFG_STORE); } catch (e) { /* ไม่มีที่เก็บ */ } }
+
+  var API = 'https://www.googleapis.com/drive/v3/files';
+  /** เรียก Drive API · ล้มเหลว → Error ที่มี web:true, status, reason (ให้ explain แปลงเป็นข้อความไทย) */
+  function webGet(url, asBuffer) {
+    var f = G().fetch;
+    if (typeof f !== 'function') { var e0 = new Error('เบราว์เซอร์ไม่รองรับ fetch'); e0.web = true; throw e0; }
+    return f(url).then(function (r) {
+      if (r.ok) return asBuffer ? r.arrayBuffer() : r.json();
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        var er = (j && j.error) || {}, reason = (er.errors && er.errors[0] && er.errors[0].reason) || (er.details && er.details[0] && er.details[0].reason) || er.status || '';
+        var e = new Error(er.message || ('HTTP ' + r.status)); e.web = true; e.status = r.status; e.reason = String(reason); throw e;
+      });
+    }, function () { var e1 = new Error('เชื่อมต่อ Google ไม่ได้'); e1.web = true; e1.reason = 'network'; throw e1; });
+  }
+  function webLatest(cfg, folder) {
+    var q = "'" + folder + "' in parents and trashed = false";
+    var url = API + '?q=' + encodeURIComponent(q) + '&orderBy=' + encodeURIComponent('modifiedTime desc') + '&pageSize=20&supportsAllDrives=true&includeItemsFromAllDrives=true' +
+      '&fields=' + encodeURIComponent('files(id,name,mimeType,modifiedTime,size)') + '&key=' + encodeURIComponent(cfg.key);
+    return webGet(url).then(function (d) {
+      var files = ((d && d.files) || []).filter(function (f) { return /spreadsheet|excel|xlsx/i.test(f.mimeType || '') || /\.xlsx$/i.test(f.name || ''); });
+      if (!files.length) { var e = new Error('ไม่พบไฟล์ตารางคำนวณในโฟลเดอร์'); e.code = 'no_file'; throw e; }
+      var f0 = files[0];
+      return { id: f0.id, title: f0.name, mimeType: f0.mimeType, modifiedTime: f0.modifiedTime,
+        viewUrl: /google-apps\.spreadsheet/.test(f0.mimeType || '') ? 'https://docs.google.com/spreadsheets/d/' + f0.id + '/edit' : 'https://drive.google.com/file/d/' + f0.id + '/view' };
+    });
+  }
+  function webDownload(cfg, f) {
+    var url = /google-apps\.spreadsheet/.test(f.mimeType || '')
+      ? API + '/' + encodeURIComponent(f.id) + '/export?mimeType=' + encodeURIComponent(XLSX_MIME) + '&key=' + encodeURIComponent(cfg.key)
+      : API + '/' + encodeURIComponent(f.id) + '?alt=media&supportsAllDrives=true&key=' + encodeURIComponent(cfg.key);
+    return webGet(url, true).then(function (buf) {
+      if (!buf || !buf.byteLength) { var e = new Error('ดาวน์โหลดแล้วไม่ได้เนื้อหาไฟล์'); e.code = 'empty'; throw e; }
+      return buf;
+    });
+  }
+  /** สาเหตุระดับโปรเจกต์/key (ไม่ใช่เฉพาะโฟลเดอร์) → หยุดทันที ไม่ไล่เรียกซ้ำทุกแหล่ง */
+  var WEB_FATAL = /^(keyInvalid|API_KEY_INVALID|badRequest|accessNotConfigured|SERVICE_DISABLED|API_KEY_HTTP_REFERRER_BLOCKED|API_KEY_SERVICE_BLOCKED|ipRefererBlocked|network)$/;
+  function pullWeb(onProgress, sources, cfg) {
+    var results = [], fatal = null;
+    return sources.reduce(function (p, src) {
+      return p.then(function () {
+        if (fatal) { results.push({ source: src, error: true, message: fatal }); onProgress(src, 'error', { message: fatal }); return; }
+        var folder = cfg.ids[src.id];
+        if (!folder) { var m0 = 'ยังไม่ได้ตั้งรหัสโฟลเดอร์นี้ในลิงก์ส่วนตัว'; results.push({ source: src, error: true, code: 'no_folder', message: m0 }); onProgress(src, 'error', { message: m0 }); return; }
+        onProgress(src, 'start');
+        return webLatest(cfg, folder).then(function (f) {
+          return webDownload(cfg, f).then(function (buf) {
+            results.push({ source: src, file: f, buf: buf });
+            onProgress(src, 'done', { file: f, bytes: buf.byteLength });
+          });
+        }).catch(function (e) {
+          var msg = e && e.code === 'no_file' ? e.message : explain(e);
+          results.push({ source: src, error: true, code: e && (e.code || e.reason), message: msg });
+          onProgress(src, 'error', { message: msg });
+          if (e && e.web && WEB_FATAL.test(e.reason || '')) fatal = msg;
+        });
+      });
+    }, Promise.resolve()).then(function () { return results; });
+  }
+  function explainWeb(e) {
+    var r = e.reason || '', st = e.status;
+    if (r === 'network') return 'เชื่อมต่อ Google ไม่ได้ — ตรวจอินเทอร์เน็ตแล้วกดดึงใหม่';
+    if (/^(keyInvalid|API_KEY_INVALID)$/.test(r) || (st === 400 && !r)) return 'API key ไม่ถูกต้อง — เปิดลิงก์ส่วนตัวที่ใส่ key ใหม่ หรือสร้าง key ใหม่';
+    if (/^(accessNotConfigured|SERVICE_DISABLED)$/.test(r)) return 'ยังไม่ได้เปิดใช้ Google Drive API ในโปรเจกต์ของ key นี้ (Google Cloud → APIs & Services → Library → Google Drive API → Enable)';
+    if (/^(API_KEY_HTTP_REFERRER_BLOCKED|ipRefererBlocked)$/.test(r)) return 'key นี้ไม่อนุญาตให้ใช้กับเว็บนี้ — ตรวจ Website restrictions ของ key (ต้องมีที่อยู่เว็บนี้)';
+    if (r === 'API_KEY_SERVICE_BLOCKED') return 'key นี้ไม่อนุญาตให้เรียก Google Drive API — ตรวจ API restrictions ของ key';
+    if (st === 404 || /^(notFound|forbidden|insufficientFilePermissions|appNotAuthorizedToFile)$/.test(r) || st === 403) return 'เปิดโฟลเดอร์/ไฟล์ไม่ได้ — ต้องแชร์เป็น “ใครมีลิงก์ดูได้” หรือรหัสโฟลเดอร์ในลิงก์ผิด';
+    if (st === 429 || /rateLimit|quota/i.test(r)) return 'Google จำกัดจำนวนครั้งชั่วคราว — รอสักครู่แล้วกดดึงใหม่';
+    return e.message || 'ดึงไฟล์ไม่สำเร็จ';
+  }
+
+  /** ข้อความภาษาไทยตามรหัสข้อผิดพลาด — แต่ละรหัสมีวิธีแก้ต่างกัน จึงไม่รวมเป็นข้อความเดียว */
+  function explain(e) {
+    if (e && e.web) return explainWeb(e);
+    var c = e && e.code, m = e && e.message ? String(e.message) : '';
+    switch (c) {
+      case 'server_not_connected': case 'server_not_found':
+        return 'ยังไม่ได้เชื่อม Google Drive — เพิ่มที่ claude.ai → Settings → Connectors แล้วโหลดหน้านี้ใหม่';
+      case 'needs_reauth':
+        return 'การเชื่อม Google Drive หมดอายุ — เชื่อมใหม่ที่ claude.ai → Settings → Connectors';
+      case 'selection_required':
+        return 'มีตัวเชื่อม Google Drive หลายตัว — เลือกตัวที่จะใช้ในหน้าต่างที่ claude.ai ถามก่อน';
+      case 'not_in_manifest': case 'consent_required': case 'approval_required': case 'not_granted':
+        return 'ยังไม่ได้อนุญาตให้หน้านี้ใช้ Google Drive — กด “ดึงไฟล์ล่าสุดใหม่” แล้วเลือกอนุญาต';
+      case 'blocked_by_policy':
+        return 'องค์กรบล็อกการใช้ Google Drive จากหน้านี้';
+      case 'capability_disabled': case 'capability_removed':
+        return 'มุมมองนี้ใช้ตัวเชื่อมไม่ได้ — เปิดหน้านี้ใน claude.ai';
+      case 'server_unavailable': case 'upstream_error': case 'rate_limited':
+        return 'Google Drive ไม่ตอบสนองชั่วคราว — ลองกดดึงใหม่อีกครั้ง';
+      default:
+        return m || 'ดึงไฟล์ไม่สำเร็จ';
+    }
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  /** อ่านอย่างเดียว → ลองซ้ำได้ 1 ครั้งเมื่อข้อผิดพลาดบอกว่า retryable */
+  function call(mcp, server, tool, input, opts) {
+    return mcp.callTool(server, tool, input, opts).catch(function (e) {
+      if (e && e.retryable) return sleep(Math.min(e.retryAfterMs || 1500, 5000) + Math.random() * 500).then(function () { return mcp.callTool(server, tool, input, opts); });
+      throw e;
+    });
+  }
+  /** payload ที่ใช้ได้ = structuredContent / ข้อความแรกที่แปลง JSON ได้ (ตามสัญญา) — กันกรณีเป็นข้อความดิบ */
+  function unwrap(res) {
+    var p = res && res.payload;
+    if (typeof p === 'string') { try { return JSON.parse(p); } catch (e) { /* ใช้ต่อด้านล่าง */ } }
+    if (p && typeof p === 'object') return p;
+    var t = res && res.content && res.content[0] && res.content[0].text;
+    if (typeof t === 'string') { try { return JSON.parse(t); } catch (e2) { /* ไม่ใช่ JSON */ } }
+    return p;
+  }
+  function b64ToBuffer(b64) {
+    var bin = atob(b64), n = bin.length, u = new Uint8Array(n);
+    for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
+    return u.buffer;
+  }
+
+  function resolveServer(mcp) {
+    return mcp.listTools().then(function (l) {
+      var names = (l.servers || []).map(function (s) { return s.server; });
+      if (names.indexOf(SERVER) >= 0) return SERVER;
+      return names.filter(function (n) { return /drive/i.test(n); })[0] || SERVER;
+    }).catch(function () { return SERVER; });
+  }
+
+  /** ไฟล์ตารางคำนวณล่าสุดในโฟลเดอร์ (เรียงตามเวลาแก้ไข) */
+  function latestFile(mcp, server, folder) {
+    var q = "parentId = '" + folder + "' and trashed = false";
+    return call(mcp, server, 'search_files', { query: q, pageSize: 20, orderBy: 'modifiedTime desc', excludeContentSnippets: true })
+      .then(function (res) {
+        var d = unwrap(res), files = (d && d.files) || [];
+        files = files.filter(function (f) { return /spreadsheet|excel|xlsx/i.test(f.mimeType || '') || /\.xlsx$/i.test(f.title || ''); });
+        if (!files.length) { var e = new Error('ไม่พบไฟล์ตารางคำนวณในโฟลเดอร์'); e.code = 'no_file'; throw e; }
+        return files[0];
+      });
+  }
+  function download(mcp, server, f) {
+    var input = { fileId: f.id };
+    if (/google-apps\.spreadsheet/.test(f.mimeType || '')) input.exportMimeType = XLSX_MIME;   // Google Sheets → .xlsx
+    return call(mcp, server, 'download_file_content', input, { cache: false }).then(function (res) {
+      var d = unwrap(res);
+      if (!d || typeof d.content !== 'string' || !d.content) { var e = new Error('ดาวน์โหลดแล้วไม่ได้เนื้อหาไฟล์'); e.code = 'empty'; throw e; }
+      return b64ToBuffer(d.content);
+    });
+  }
+
+  /**
+   * ดึงทุกแหล่ง (ทีละแหล่ง) — onProgress(source, state, info) โดย state = 'start' | 'done' | 'error'
+   * คืน [{source, file, buf} | {source, error, message}] · แหล่งใดล้มเหลวไม่กระทบแหล่งอื่น
+   * ถ้าล้มเหลวด้วยสาเหตุระดับตัวเชื่อม (ไม่ได้อนุญาต/ไม่ได้เชื่อม/หมดอายุ) จะหยุดทันทีไม่ไล่เรียกซ้ำทุกแหล่ง
+   */
+  function pull(onProgress, sources) {
+    sources = sources || SOURCES;
+    onProgress = onProgress || function () {};
+    var results = [];
+    return getMcp().then(function (mcp) {
+      if (!mcp) {
+        var cfg = webConfig();
+        if (cfg) return pullWeb(onProgress, sources, cfg);
+        return [{ source: null, error: true, message: explain({ code: 'capability_disabled' }) }];
+      }
+      return resolveServer(mcp).then(function (server) {
+        var fatal = null;
+        return sources.reduce(function (p, src) {
+          return p.then(function () {
+            if (fatal) { results.push({ source: src, error: true, message: fatal }); onProgress(src, 'error', { message: fatal }); return; }
+            onProgress(src, 'start');
+            return latestFile(mcp, server, src.folder).then(function (f) {
+              return download(mcp, server, f).then(function (buf) {
+                results.push({ source: src, file: f, buf: buf });
+                onProgress(src, 'done', { file: f, bytes: buf.byteLength });
+              });
+            }).catch(function (e) {
+              var msg = e && e.code === 'no_file' ? e.message : explain(e);
+              results.push({ source: src, error: true, code: e && e.code, message: msg });
+              onProgress(src, 'error', { message: msg });
+              if (e && /^(server_not_connected|server_not_found|needs_reauth|selection_required|not_in_manifest|consent_required|approval_required|not_granted|blocked_by_policy|capability_disabled|capability_removed)$/.test(e.code)) fatal = msg;
+            });
+          });
+        }, Promise.resolve());
+      }).then(function () { return results; });
+    });
+  }
+
+  var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb,
+    _reset: function () { mcpPromise = null; api.mode = null; } };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.PalletDrive = api;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
 <script>
 /* ข้อมูลตัวอย่าง (สมมติทั้งหมด — ไม่ใช่ข้อมูลจริง) สร้างในเลย์เอาต์เดียวกับไฟล์จริง
  * ใช้เป็นปุ่ม "ลองใช้ข้อมูลตัวอย่าง" ในเว็บ และเป็นข้อมูลทดสอบอัตโนมัติ (tests/core.test.js)
@@ -2059,6 +2345,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- วาดตัวเลือก ----------
   function renderOptions() {
     $('#options').hidden = !(state.out.files.length && state.in.files.length);
+    $('#opt-hq').hidden = !releaseRecords().length;     // แสดงเฉพาะเมื่อผู้ใช้โหลดไฟล์สรุปคลังจ่ายเอง (ดึงจาก Drive ไม่ใช้ไฟล์นี้)
     var keys = Object.keys(state.aliases);
     $('#alias-box').hidden = !keys.length;
     var box = clear($('#aliases'));
@@ -2156,7 +2443,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       // ขารับ: วันเวลาที่รับภูมิภาครับเข้า · พาเลทที่กลับมา
       h('td', { class: 'leg-in', 'data-label': 'ขารับ วันเวลา' }, g.in.n ? core.fmtDate(g.returns[0].d) : (g.status === 'pending' ? 'รอรับเข้า' : 'ไม่พบ'),
         g.in.n ? h('span', { class: 'sub', text: (core.fmtTime(g.returns[0].tm) || '') + (g.returns.length > 1 ? ' +' + (g.returns.length - 1) + ' ครั้ง' : '') }) : null),
-      h('td', { class: 'r pal-in ' + (g.in.n ? (INCLS[g.status] || '') : ''), 'data-label': 'ขารับ พาเลท' }, g.in.n ? fmt(g.in.pal) : '–'),
+      h('td', { class: 'r pal-in pi-' + g.status, 'data-label': 'ขารับ พาเลท' }, g.in.n ? fmt(g.in.pal) : '–', g.in.n ? null : h('span', { class: 'sub', text: g.status === 'pending' ? 'รอรับเข้า' : 'ยังไม่พบ' })),
       h('td', { class: 'status', 'data-label': 'เท่ากันไหม' }, h('span', { class: 'badge b-' + g.status }, h('span', { class: 'mk', 'aria-hidden': 'true', text: MARK[g.status] }), verdict(g)),
         (g.suggest || g.notes.length) ? h('span', { class: 'sub', text: g.suggest ? 'ทะเบียนคล้ายกัน — กดแถวดู' : 'มีหมายเหตุ — กดแถวดู' }) : null));
     if (!open) return [main];
@@ -2625,6 +2912,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (!ok) return;                       // เปิดนอก claude.ai → ไม่แสดงส่วนนี้ ใช้เลือกไฟล์เองตามเดิม
       $('#drive-box').hidden = false; $('#btn-drive').hidden = false;
       $('#btn-drive').addEventListener('click', pullDrive);
+      if (window.PalletDrive.mode === 'web') {       // เว็บทั่วไป: ค่าตั้งต้นมาจากลิงก์ส่วนตัวและเก็บในเครื่องนี้
+        $('#drive-hint').textContent = 'ขาออก = ไฟล์ล่าสุดของภาคจ่ายทั้ง 5 · ขารับเข้า = หน้าบ้าน (รับภูมิภาค) — ดึงผ่าน Google Drive API ด้วย API key ที่ตั้งไว้ในเครื่องนี้ (โฟลเดอร์ต้องแชร์แบบ “ใครมีลิงก์”)';
+        var rb = $('#btn-drive-reset'); rb.hidden = false;
+        rb.addEventListener('click', function () { window.PalletDrive.resetWeb(); location.reload(); });
+      }
       pullDrive();                           // เปิดหน้าแล้วดึงไฟล์ล่าสุดให้เลย
     });
   }
@@ -2640,9 +2932,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var sum = $('#data-sum'); clear(sum);
     var nOut = state.out.files.length, nIn = state.in.files.length, sheets = selectedSheets('out').length + selectedSheets('in').length;
     if (driveBusy) { sum.textContent = 'กำลังดึงไฟล์ล่าสุดจาก Google Drive…'; return; }
-    if (!nOut && !nIn) { sum.textContent = window.PalletDrive && !$('#btn-drive').hidden ? 'ยังไม่มีข้อมูล — กด “ดึงไฟล์ล่าสุดใหม่จาก Drive” หรือเลือกไฟล์เอง' : 'ยังไม่มีข้อมูล — เลือกไฟล์ภาคจ่ายทั้ง 5 ภาคและไฟล์รับภูมิภาค หรือกด “ลองใช้ข้อมูลตัวอย่าง”'; return; }
+    if (!nOut && !nIn) { sum.textContent = window.PalletDrive && !$('#btn-drive').hidden ? 'ยังไม่มีข้อมูล — กด “ดึงใหม่จาก Drive” หรือเลือกไฟล์เอง' : 'ยังไม่มีข้อมูล — เลือกไฟล์ภาคจ่ายทั้ง 5 ภาคและไฟล์รับภูมิภาค หรือกด “ลองใช้ข้อมูลตัวอย่าง”'; return; }
     sum.appendChild(h('b', { text: 'ข้อมูลที่ใช้: ' }));
-    sum.appendChild(document.createTextNode('ภาคจ่าย ' + nOut + ' ไฟล์ · รับภูมิภาค ' + nIn + ' ไฟล์ · ' + sheets + ' ชีต' +
+    sum.appendChild(document.createTextNode('ขาออก ' + nOut + ' ไฟล์ · ขารับเข้า ' + nIn + ' ไฟล์ · ' + sheets + ' ชีต' +
       (state.driveNote ? ' · ' + state.driveNote + (state.driveTime ? ' เวลา ' + state.driveTime : '') : '')));
     if (state.driveBad) sum.appendChild(h('span', { class: 'warn', text: ' · มี ' + state.driveBad + ' ไฟล์ดึงไม่สำเร็จ (กด “ไฟล์และชีตที่ใช้” ดูสาเหตุ)' }));
   }
