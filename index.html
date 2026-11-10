@@ -280,6 +280,15 @@ footer { color:var(--muted); font-size:.8125rem; padding:0 0 32px; }
 .st-m { font-size:.8125rem; line-height:1.35; opacity:.92; }
 .sum-board .st-s { margin-top:auto; font-weight:600; opacity:1; }
 .pal-sum .arrow { color:var(--muted); }
+.daytabs { display:grid; grid-template-columns:1.5fr 1fr; gap:14px; align-items:start; margin:6px 0 10px; }
+@media (max-width: 900px) { .daytabs { grid-template-columns:1fr; } }
+.daytabs > * { min-width:0; }
+table.dtab th, table.dtab td { padding:6px 10px; font-size:.875rem; }
+table.dtab thead th { white-space:nowrap; position:static; }
+table.dtab tfoot th, table.dtab tfoot td { font-weight:800; background:var(--surface-2); }
+table.dtab tr.on td { background:var(--ok-bg); }
+table.dtab .c-short { color:var(--short); } table.dtab .c-over { color:var(--over); } table.dtab .c-miss { color:var(--miss); }
+table.dtab button.linklike { font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
 .sum-h { margin:14px 0 4px; font-size:.9375rem; color:var(--muted); font-weight:700; }
 .sum5 { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:6px 0 8px; }
 @media (max-width: 1100px) { .sum5 { grid-template-columns:repeat(3,1fr); } }
@@ -2139,7 +2148,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     out: { files: [] }, in: { files: [] },
     tol: 0, grace: 2, sameDay: false, useHq: true, aliases: {},
     filter: 'all', q: '', sort: { key: 'status', dir: 1 }, open: {}, limit: 150,
-    tab: 'status', moreOpen: false, tf: { on: false, region: '', date: '' }, bl: {}, fx: { group: 'all', sev: 'all', q: '', limit: 40, hideDone: false }, done: {},
+    day: '', tab: 'status', moreOpen: false, tf: { on: false, region: '', date: '' }, bl: {}, fx: { group: 'all', sev: 'all', q: '', limit: 40, hideDone: false }, done: {},
     from: (function () { var v = ''; try { v = localStorage.getItem('pallet-check:from') || ''; } catch (e) { /* ใช้ค่าเริ่มต้น */ } return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : DEFAULT_FROM; })(),   // ดึง/ตรวจตั้งแต่วันที่นี้เป็นต้นมา (ค.ศ.)
     inputsOpen: null,          // null = อัตโนมัติ (มีผลแล้วพับเก็บ ยังไม่มีผลให้เปิด) · true/false = ผู้ใช้เลือกเอง
     driveNote: '', driveTime: ''
@@ -2608,6 +2617,39 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('span', { class: 'st-n' }, sgn(net), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: net > 0 ? 'รวมแล้วรถที่กลับมาแล้ว กลับมา “มากกว่า” ที่ปล่อยออก' : net < 0 ? 'รวมแล้วรถที่กลับมาแล้ว กลับมา “น้อยกว่า” ที่ปล่อยออก' : 'รวมแล้วเท่ากับที่ปล่อยออก' }),
         h('span', { class: 'st-s', text: 'ยังไม่กลับอีก ' + fmt(notBack) + ' พาเลท (ค้างบนรถ + ไม่กลับมา) · นับรวมทั้งหมด: รับ ' + fmt(S5.all.inn) + ' − ออก ' + fmt(S5.all.out) + ' = ' + sgn(S5.all.inn - S5.all.out) }))));
+    // ---- สรุปรายวัน: นับตามวันที่ปล่อยออก / นับตามวันที่รับเข้า (ให้เห็นว่ายอดมาจากวันไหน) ----
+    var DAYS = {}, RECV = {};
+    rowsAll.forEach(function (g) {
+      var d = DAYS[g.date] = DAYS[g.date] || { trips: 0, out: 0, inn: 0, short: 0, over: 0, notback: 0 };
+      d.trips++; d.out += g.out.pal; d.inn += g.in.pal;
+      if (g.status === 'short') d.short += g.out.pal - g.in.pal;
+      else if (g.status === 'over') d.over += g.in.pal - g.out.pal;
+      else if (g.status === 'pending' || g.status === 'no_return') d.notback += g.out.pal;
+      g.returns.forEach(function (r) { var x = RECV[r.d] = RECV[r.d] || { match: 0, orph: 0 }; x.match += r.pal; });
+    });
+    (c.res.orphans || []).forEach(function (o) { var x = RECV[o.d] = RECV[o.d] || { match: 0, orph: 0 }; x.orph += o.pal; });
+    var dkeys = Object.keys(DAYS).sort(), rkeys = Object.keys(RECV).sort();
+    var tot = { trips: 0, out: 0, inn: 0, short: 0, over: 0, notback: 0 }; dkeys.forEach(function (k) { Object.keys(tot).forEach(function (f) { tot[f] += DAYS[k][f]; }); });
+    var rt = { match: 0, orph: 0 }; rkeys.forEach(function (k) { rt.match += RECV[k].match; rt.orph += RECV[k].orph; });
+    var td = function (v, cls) { return h('td', { class: 'r' + (cls ? ' ' + cls : ''), text: v === 0 ? '–' : fmt(v) }); };
+    box.appendChild(h('h3', { class: 'sum-h', text: 'สรุปรายวัน' }));
+    box.appendChild(h('p', { class: 'pal-meta', text: 'ขาออก = นับตามวันที่ปล่อยรถ · ขารับ = พาเลทที่รถคันเดียวกันกลับมาหลังเวลาปล่อย (จนถึงก่อนปล่อยเที่ยวถัดไป) จึงอาจเป็นวันถัดไปได้ — กดวันที่เพื่อดูรายเที่ยวของวันนั้น' }));
+    var t1 = h('table', { class: 'dtab' }, h('caption', { class: 'sr-only', text: 'สรุปพาเลทตามวันที่ปล่อยออก' }),
+      h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'ปล่อยวันที่' }), h('th', { scope: 'col', class: 'r', text: 'เที่ยว' }), h('th', { scope: 'col', class: 'r', text: 'ขาออก' }), h('th', { scope: 'col', class: 'r', text: 'ขารับ (ของเที่ยวนั้น)' }),
+        h('th', { scope: 'col', class: 'r', text: 'ขาด' }), h('th', { scope: 'col', class: 'r', text: 'เกิน' }), h('th', { scope: 'col', class: 'r', text: 'ยังไม่กลับ' }))),
+      h('tbody', null, dkeys.map(function (k) {
+        var d = DAYS[k], on = state.day === k;
+        return h('tr', { class: on ? 'on' : '' }, h('td', null, h('button', { type: 'button', class: 'linklike', 'aria-pressed': String(on), onclick: function () { state.day = on ? '' : k; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); } }, core.fmtDate(k))),
+          td(d.trips), td(d.out), td(d.inn), td(d.short, 'c-short'), td(d.over, 'c-over'), td(d.notback, 'c-miss'));
+      })),
+      h('tfoot', null, h('tr', null, h('th', { scope: 'row', text: 'รวม' }), td(tot.trips), td(tot.out), td(tot.inn), td(tot.short, 'c-short'), td(tot.over, 'c-over'), td(tot.notback, 'c-miss'))));
+    var t2 = h('table', { class: 'dtab' }, h('caption', { class: 'sr-only', text: 'สรุปพาเลทขารับตามวันที่รับเข้า' }),
+      h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'รับเข้าวันที่' }), h('th', { scope: 'col', class: 'r', text: 'ทั้งหมด' }), h('th', { scope: 'col', class: 'r', text: 'จับคู่ได้' }), h('th', { scope: 'col', class: 'r', text: 'ไม่มีต้นทาง' }))),
+      h('tbody', null, rkeys.map(function (k) { var x = RECV[k]; return h('tr', null, h('td', { text: core.fmtDate(k) }), td(x.match + x.orph), td(x.match), td(x.orph, 'c-miss')); })),
+      h('tfoot', null, h('tr', null, h('th', { scope: 'row', text: 'รวม' }), td(rt.match + rt.orph), td(rt.match), td(rt.orph, 'c-miss'))));
+    box.appendChild(h('div', { class: 'daytabs' },
+      h('div', { class: 'tablewrap' }, t1),
+      h('div', null, h('div', { class: 'tablewrap' }, t2), h('p', { class: 'pal-meta', text: 'ทั้งหมด = ทุกบันทึกในไฟล์รับภูมิภาค · จับคู่ได้ = ตรงกับเที่ยวที่ปล่อย (นับเป็นขารับด้านบน) · ไม่มีต้นทาง = หาเที่ยวขาออกไม่เจอ เช่น รถที่ปล่อยก่อนวันที่เริ่ม หรือทะเบียนไม่ตรงกัน (แยกไว้ ไม่รวมใน ขารับ)' }))));
     box.appendChild(h('h3', { class: 'sum-h', text: 'อื่น ๆ' }));
     var CARDS = [
       ['ok', 'ตรงกัน', 'รถกลับมาแล้ว พาเลทเท่ากับที่ปล่อยออก', function (x) { return [x.out, 'พาเลท']; }],
@@ -2631,6 +2673,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var pTrips = h('div', { id: 'panel-trips' });
     box.appendChild(pTrips);
     var fbox = h('div', { class: 'filters', role: 'group', 'aria-label': 'กรองตามสถานะ' });
+    if (state.day) {
+      pTrips.appendChild(h('div', { class: 'fbar' }, 'กำลังแสดงเที่ยวที่ปล่อยออกวันที่ ', h('b', { text: core.fmtDate(state.day) }),
+        h('button', { type: 'button', class: 'btn small', onclick: function () { state.day = ''; state.limit = 150; renderResults(c); } }, 'แสดงทุกวัน')));
+    }
     if (state.filter !== 'all' && state.filter !== 'problem') {
       var fdef = FILTERS.filter(function (f) { return f[0] === state.filter; })[0];
       if (fdef) {
@@ -2687,7 +2733,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   function tfRows(c) {
     var tf = state.tf;
-    return !tf.on ? c.res.rows : c.res.rows.filter(function (g) { return (g.region || '') === tf.region && (!tf.date || g.date === tf.date); });
+    var base = !tf.on ? c.res.rows : c.res.rows.filter(function (g) { return (g.region || '') === tf.region && (!tf.date || g.date === tf.date); });
+    return state.day ? base.filter(function (g) { return g.date === state.day; }) : base;
   }
   function goTrips(c, opt) {      // จากหน้าสถานะ → ตารางรายเที่ยว พร้อมตัวกรอง
     state.tf = opt.tf || { on: false, region: '', date: '' };
@@ -3142,7 +3189,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
   $('#btn-reset').addEventListener('click', function () {
     state.out.files = []; state.in.files = []; state.aliases = {}; state.open = {}; state.filter = 'all'; state.q = '';
-    state.tf = { on: false, region: '', date: '' }; state.bl = {}; state.tab = 'status'; state.moreOpen = false; state.inputsOpen = null; state.driveNote = ''; state.driveBad = 0;
+    state.tf = { on: false, region: '', date: '' }; state.bl = {}; state.day = ''; state.tab = 'status'; state.moreOpen = false; state.inputsOpen = null; state.driveNote = ''; state.driveBad = 0;
     state.tol = 0; state.grace = 2; state.sameDay = false; state.useHq = true;
     state.from = DEFAULT_FROM; fromEl.value = DEFAULT_FROM; try { localStorage.removeItem('pallet-check:from'); } catch (e) { /* ไม่เป็นไร */ }
     $('#tol').value = '0'; $('#grace').value = '2'; $('#same-day').checked = false; $('#use-hq').checked = true;
