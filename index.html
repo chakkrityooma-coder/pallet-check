@@ -72,7 +72,9 @@ main { padding:24px 0 48px; }
 .databar-sum { margin:0; font-size:.9375rem; flex:1 1 320px; min-width:0; overflow-wrap:anywhere; }
 .databar-sum b { color:var(--text); }
 .databar-sum .warn { color:var(--short); font-weight:600; }
-.databar-act { display:flex; gap:8px; flex-wrap:wrap; }
+.databar-act { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.from-date { font-size:.875rem; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+.from-date input { padding:5px 8px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; }
 #inputs[hidden] { display:none; }
 main.has-res .lead { display:none; }
 
@@ -268,6 +270,8 @@ footer { color:var(--muted); font-size:.8125rem; padding:0 0 32px; }
 .sum-board { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:10px 0 14px; }
 @media (max-width: 860px) { .sum-board { grid-template-columns:repeat(2,1fr); } }
 @media (max-width: 520px) { .sum-board { grid-template-columns:1fr; } }
+.sum-board.so2 { grid-template-columns:repeat(2,1fr); }
+@media (max-width: 520px) { .sum-board.so2 { grid-template-columns:1fr; } }
 .sum-board .st-tile { min-height:132px; border:2px solid transparent; font:inherit; }
 .sum-board .st-tile[aria-pressed="true"] { border-color:currentColor; box-shadow:0 2px 8px rgba(0,0,0,.12); }
 .sum-board .st-n { display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; } .sum-board .st-n small { font-size:.875rem; font-weight:600; }
@@ -281,6 +285,9 @@ footer { color:var(--muted); font-size:.8125rem; padding:0 0 32px; }
 @media (max-width: 1100px) { .sum5 { grid-template-columns:repeat(3,1fr); } }
 @media (max-width: 760px) { .sum5 { grid-template-columns:repeat(2,1fr); } }
 @media (max-width: 480px) { .sum5 { grid-template-columns:1fr; } }
+.sum5.so3 { grid-template-columns:repeat(3,1fr); }
+@media (max-width: 760px) { .sum5.so3 { grid-template-columns:1fr; } }
+.st-net { background:var(--surface-2); color:var(--text); border:2px solid var(--border) !important; cursor:default; }
 .sum5 .st-tile { min-height:150px; border:2px solid transparent; font:inherit; }
 .sum5 .st-tile[aria-pressed="true"] { border-color:currentColor; box-shadow:0 2px 8px rgba(0,0,0,.12); }
 .sum5 .st-l { font-size:1rem; line-height:1.25; } .sum5 .st-n { font-size:2.125rem; display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
@@ -395,6 +402,7 @@ table.ck th, table.ck td { font-size:.875rem; }
   <section class="card databar" id="databar" aria-label="ข้อมูลที่ใช้ตรวจ">
     <p class="databar-sum" id="data-sum" role="status" aria-live="polite">ยังไม่มีข้อมูล</p>
     <div class="databar-act">
+      <label class="from-date">ตั้งแต่วันที่ <input type="date" id="from-date" value="2026-11-01" min="2020-01-01" aria-label="ดึงและตรวจข้อมูลตั้งแต่วันที่"></label>
       <button type="button" class="btn primary" id="btn-drive" hidden>ดึงใหม่จาก Drive</button>
       <button type="button" class="btn" id="btn-inputs" aria-expanded="true" aria-controls="inputs">ไฟล์และชีตที่ใช้</button>
     </div>
@@ -1623,7 +1631,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
  *     (n=เหนือ c=กลาง e=อีสาน s=ใต้ b=กทม i=หน้าบ้าน/รับภูมิภาค)
  * เปิดเป็นไฟล์ในเครื่อง (file://) หรือไม่มีค่าตั้งต้น จะไม่แสดงส่วนนี้ และยังเลือกไฟล์เองได้ตามปกติ
  *
- * ไฟล์ที่ดึง = ไฟล์ล่าสุดในแต่ละโฟลเดอร์ (รหัสโฟลเดอร์ตามคำสั่ง Routine ของ repo นี้ — แก้ได้ที่ SOURCES):
+ * ไฟล์ที่ดึง = ไฟล์ของเดือนที่ตั้งแต่ "วันที่เริ่ม" เป็นต้นมาในแต่ละโฟลเดอร์ (ไฟล์รายเดือน เช่น …พฤศจิกายน 2569) — รหัสโฟลเดอร์แก้ได้ที่ SOURCES:
  *   ขาออก (โฟลเดอร์ จ่ายเหนือ/จ่ายกลาง/จ่ายอีสาน/จ่ายใต้/กทม): ภาคจ่ายทั้ง 5 (Data Outbound — รถและพาเลท)
  *   ขารับเข้า (โฟลเดอร์ หน้าบ้าน (รับภูมิภาค)): แบบฟอร์มการรับสินค้า คลัง สนญ.ใหญ่
  *   (ไม่ดึงสรุปคลังจ่าย สนญ. — ไม่มีพาเลท ขาออกใช้ภาคจ่ายทั้ง 5 เท่านั้น)
@@ -1697,6 +1705,34 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function resetWeb() { try { G().localStorage.removeItem(CFG_STORE); } catch (e) { /* ไม่มีที่เก็บ */ } }
 
+  // ---------- เลือกไฟล์ "ตั้งแต่วันที่ ... เป็นต้นมา" ----------
+  var TH_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  var MAX_FILES = 8;       // ป้องกันดึงไฟล์เก่าจำนวนมากเกินไป (ไฟล์รายเดือน ~ 8 เดือน)
+  /** เดือนของไฟล์จากชื่อ เช่น "…พฤศจิกายน 2569" → ปีค.ศ.*12 + เดือน(0-11) · ไม่มีเดือนในชื่อ = null */
+  function fileMonth(name) {
+    var m = new RegExp('(' + TH_MONTHS.join('|') + ')\\s*(\\d{4})').exec(String(name || ''));
+    if (!m) return null;
+    var y = +m[2]; if (y > 2400) y -= 543;
+    return y * 12 + TH_MONTHS.indexOf(m[1]);
+  }
+  /**
+   * files (เรียงใหม่→เก่า) → ไฟล์ที่ต้องดึง
+   *  - ไม่ระบุ from: ไฟล์ล่าสุดไฟล์เดียว (เหมือนเดิม)
+   *  - ระบุ from (YYYY-MM-DD): ชื่อมีเดือน/ปี → เดือนต้อง >= เดือนของ from · ชื่อไม่มีเดือน → เวลาแก้ไขต้อง >= from
+   */
+  function pickFiles(files, from) {
+    if (!from) return files.slice(0, 1);
+    var ym = (+from.slice(0, 4)) * 12 + (+from.slice(5, 7) - 1);
+    return files.filter(function (f) {
+      var fm = fileMonth(f.title);
+      if (fm != null) return fm >= ym;
+      return String(f.modifiedTime || '').slice(0, 10) >= from && !!f.modifiedTime;
+    }).slice(0, MAX_FILES);
+  }
+  function noFileError(from) {
+    var e = new Error(from ? 'ไม่พบไฟล์ตารางคำนวณตั้งแต่ ' + from + ' ในโฟลเดอร์' : 'ไม่พบไฟล์ตารางคำนวณในโฟลเดอร์'); e.code = 'no_file'; return e;
+  }
+
   var API = 'https://www.googleapis.com/drive/v3/files';
   /** เรียก Drive API · ล้มเหลว → Error ที่มี web:true, status, reason (ให้ explain แปลงเป็นข้อความไทย) */
   function webGet(url, asBuffer) {
@@ -1710,16 +1746,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       });
     }, function () { var e1 = new Error('เชื่อมต่อ Google ไม่ได้'); e1.web = true; e1.reason = 'network'; throw e1; });
   }
-  function webLatest(cfg, folder) {
+  function webList(cfg, folder, from) {
     var q = "'" + folder + "' in parents and trashed = false";
-    var url = API + '?q=' + encodeURIComponent(q) + '&orderBy=' + encodeURIComponent('modifiedTime desc') + '&pageSize=20&supportsAllDrives=true&includeItemsFromAllDrives=true' +
+    var url = API + '?q=' + encodeURIComponent(q) + '&orderBy=' + encodeURIComponent('modifiedTime desc') + '&pageSize=50&supportsAllDrives=true&includeItemsFromAllDrives=true' +
       '&fields=' + encodeURIComponent('files(id,name,mimeType,modifiedTime,size)') + '&key=' + encodeURIComponent(cfg.key);
     return webGet(url).then(function (d) {
-      var files = ((d && d.files) || []).filter(function (f) { return /spreadsheet|excel|xlsx/i.test(f.mimeType || '') || /\.xlsx$/i.test(f.name || ''); });
-      if (!files.length) { var e = new Error('ไม่พบไฟล์ตารางคำนวณในโฟลเดอร์'); e.code = 'no_file'; throw e; }
-      var f0 = files[0];
-      return { id: f0.id, title: f0.name, mimeType: f0.mimeType, modifiedTime: f0.modifiedTime,
-        viewUrl: /google-apps\.spreadsheet/.test(f0.mimeType || '') ? 'https://docs.google.com/spreadsheets/d/' + f0.id + '/edit' : 'https://drive.google.com/file/d/' + f0.id + '/view' };
+      var files = ((d && d.files) || []).filter(function (f) { return /spreadsheet|excel|xlsx/i.test(f.mimeType || '') || /\.xlsx$/i.test(f.name || ''); }).map(function (f0) {
+        return { id: f0.id, title: f0.name, mimeType: f0.mimeType, modifiedTime: f0.modifiedTime,
+          viewUrl: /google-apps\.spreadsheet/.test(f0.mimeType || '') ? 'https://docs.google.com/spreadsheets/d/' + f0.id + '/edit' : 'https://drive.google.com/file/d/' + f0.id + '/view' };
+      });
+      var pick = pickFiles(files, from);
+      if (!pick.length) throw noFileError(from);
+      return pick;
     });
   }
   function webDownload(cfg, f) {
@@ -1733,7 +1771,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   /** สาเหตุระดับโปรเจกต์/key (ไม่ใช่เฉพาะโฟลเดอร์) → หยุดทันที ไม่ไล่เรียกซ้ำทุกแหล่ง */
   var WEB_FATAL = /^(keyInvalid|API_KEY_INVALID|badRequest|accessNotConfigured|SERVICE_DISABLED|API_KEY_HTTP_REFERRER_BLOCKED|API_KEY_SERVICE_BLOCKED|ipRefererBlocked|network)$/;
-  function pullWeb(onProgress, sources, cfg) {
+  function pullWeb(onProgress, sources, cfg, from) {
     var results = [], fatal = null;
     return sources.reduce(function (p, src) {
       return p.then(function () {
@@ -1741,10 +1779,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var folder = cfg.ids[src.id];
         if (!folder) { var m0 = 'ยังไม่ได้ตั้งรหัสโฟลเดอร์นี้ในลิงก์ส่วนตัว'; results.push({ source: src, error: true, code: 'no_folder', message: m0 }); onProgress(src, 'error', { message: m0 }); return; }
         onProgress(src, 'start');
-        return webLatest(cfg, folder).then(function (f) {
-          return webDownload(cfg, f).then(function (buf) {
-            results.push({ source: src, file: f, buf: buf });
-            onProgress(src, 'done', { file: f, bytes: buf.byteLength });
+        return webList(cfg, folder, from).then(function (files) {
+          var got = [];
+          return files.reduce(function (pp, f) {
+            return pp.then(function () {
+              return webDownload(cfg, f).then(function (buf) { results.push({ source: src, file: f, buf: buf }); got.push({ file: f, bytes: buf.byteLength }); });
+            });
+          }, Promise.resolve()).then(function () {
+            onProgress(src, 'done', { file: got[0].file, files: got.map(function (x) { return x.file; }), bytes: got.reduce(function (a, x) { return a + x.bytes; }, 0) });
           });
         }).catch(function (e) {
           var msg = e && e.code === 'no_file' ? e.message : explain(e);
@@ -1822,15 +1864,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }).catch(function () { return SERVER; });
   }
 
-  /** ไฟล์ตารางคำนวณล่าสุดในโฟลเดอร์ (เรียงตามเวลาแก้ไข) */
-  function latestFile(mcp, server, folder) {
+  /** ไฟล์ตารางคำนวณในโฟลเดอร์ที่ต้องดึง (เรียงตามเวลาแก้ไข ใหม่→เก่า) — ดู pickFiles */
+  function listFiles(mcp, server, folder, from) {
     var q = "parentId = '" + folder + "' and trashed = false";
-    return call(mcp, server, 'search_files', { query: q, pageSize: 20, orderBy: 'modifiedTime desc', excludeContentSnippets: true })
+    return call(mcp, server, 'search_files', { query: q, pageSize: from ? 50 : 20, orderBy: 'modifiedTime desc', excludeContentSnippets: true })
       .then(function (res) {
         var d = unwrap(res), files = (d && d.files) || [];
         files = files.filter(function (f) { return /spreadsheet|excel|xlsx/i.test(f.mimeType || '') || /\.xlsx$/i.test(f.title || ''); });
-        if (!files.length) { var e = new Error('ไม่พบไฟล์ตารางคำนวณในโฟลเดอร์'); e.code = 'no_file'; throw e; }
-        return files[0];
+        var pick = pickFiles(files, from);
+        if (!pick.length) throw noFileError(from);
+        return pick;
       });
   }
   function download(mcp, server, f) {
@@ -1845,17 +1888,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   /**
    * ดึงทุกแหล่ง (ทีละแหล่ง) — onProgress(source, state, info) โดย state = 'start' | 'done' | 'error'
-   * คืน [{source, file, buf} | {source, error, message}] · แหล่งใดล้มเหลวไม่กระทบแหล่งอื่น
+   * opts.from = 'YYYY-MM-DD' → ดึงไฟล์ของเดือนนั้นเป็นต้นมาทั้งหมด (ไม่ระบุ = ไฟล์ล่าสุดไฟล์เดียว)
+   * คืน [{source, file, buf} | {source, error, message}] (แหล่งเดียวอาจได้หลายไฟล์) · แหล่งใดล้มเหลวไม่กระทบแหล่งอื่น
    * ถ้าล้มเหลวด้วยสาเหตุระดับตัวเชื่อม (ไม่ได้อนุญาต/ไม่ได้เชื่อม/หมดอายุ) จะหยุดทันทีไม่ไล่เรียกซ้ำทุกแหล่ง
    */
-  function pull(onProgress, sources) {
+  function pull(onProgress, sources, opts) {
     sources = sources || SOURCES;
+    var from = opts && opts.from ? String(opts.from) : '';
     onProgress = onProgress || function () {};
     var results = [];
     return getMcp().then(function (mcp) {
       if (!mcp) {
         var cfg = webConfig();
-        if (cfg) return pullWeb(onProgress, sources, cfg);
+        if (cfg) return pullWeb(onProgress, sources, cfg, from);
         return [{ source: null, error: true, message: explain({ code: 'capability_disabled' }) }];
       }
       return resolveServer(mcp).then(function (server) {
@@ -1864,10 +1909,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           return p.then(function () {
             if (fatal) { results.push({ source: src, error: true, message: fatal }); onProgress(src, 'error', { message: fatal }); return; }
             onProgress(src, 'start');
-            return latestFile(mcp, server, src.folder).then(function (f) {
-              return download(mcp, server, f).then(function (buf) {
-                results.push({ source: src, file: f, buf: buf });
-                onProgress(src, 'done', { file: f, bytes: buf.byteLength });
+            return listFiles(mcp, server, src.folder, from).then(function (files) {
+              var got = [];
+              return files.reduce(function (pp, f) {
+                return pp.then(function () {
+                  return download(mcp, server, f).then(function (buf) { results.push({ source: src, file: f, buf: buf }); got.push({ file: f, bytes: buf.byteLength }); });
+                });
+              }, Promise.resolve()).then(function () {
+                onProgress(src, 'done', { file: got[0].file, files: got.map(function (x) { return x.file; }), bytes: got.reduce(function (a, x) { return a + x.bytes; }, 0) });
               });
             }).catch(function (e) {
               var msg = e && e.code === 'no_file' ? e.message : explain(e);
@@ -1882,7 +1931,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -2085,11 +2134,13 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var LAYOUTS = [['auto', 'อ่านรูปแบบอัตโนมัติ'], ['outbound', 'ไฟล์ Data Outbound'], ['dispatch', 'ไฟล์สรุปคลังจ่าย (สนญ.)'], ['inbound', 'แบบฟอร์มรับสินค้า'], ['generic', 'ตารางทั่วไป']];
   var LAYOUT_NAME = { outbound: 'Data Outbound', dispatch: 'สรุปคลังจ่าย สนญ. (เวลาปล่อยรถ)', inbound: 'แบบฟอร์มรับสินค้า', generic: 'ตารางทั่วไป' };
 
+  var DEFAULT_FROM = '2026-11-01';     // 1 พ.ย. 69 — เริ่มตรวจตั้งแต่วันที่นี้เป็นต้นมา
   var state = {
     out: { files: [] }, in: { files: [] },
     tol: 0, grace: 2, sameDay: false, useHq: true, aliases: {},
     filter: 'all', q: '', sort: { key: 'status', dir: 1 }, open: {}, limit: 150,
     tab: 'status', moreOpen: false, tf: { on: false, region: '', date: '' }, bl: {}, fx: { group: 'all', sev: 'all', q: '', limit: 40, hideDone: false }, done: {},
+    from: (function () { var v = ''; try { v = localStorage.getItem('pallet-check:from') || ''; } catch (e) { /* ใช้ค่าเริ่มต้น */ } return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : DEFAULT_FROM; })(),   // ดึง/ตรวจตั้งแต่วันที่นี้เป็นต้นมา (ค.ศ.)
     inputsOpen: null,          // null = อัตโนมัติ (มีผลแล้วพับเก็บ ยังไม่มีผลให้เปิด) · true/false = ผู้ใช้เลือกเอง
     driveNote: '', driveTime: ''
   };
@@ -2163,7 +2214,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     // ถ้ามีชีตที่ตั้งชื่อเป็นวันที่ → เลือกเฉพาะชีตวันที่ (ชีตอื่นมักเป็นแม่แบบ/สำเนา เสี่ยงนับซ้ำ)
     var anyDated = entry.sheets.some(function (s) { return s.parsed.usable && s.parsed.dateFromName; });
     entry.sheets.forEach(function (s) {
-      s.selected = s.parsed.usable && s.parsed.stats.records > 0 && (!anyDated || s.parsed.dateFromName);
+      var inRange = !s.parsed.date || s.parsed.date >= state.from;      // ชีตของวันก่อนวันที่เริ่มไม่ติ๊กให้
+      s.selected = s.parsed.usable && s.parsed.stats.records > 0 && (!anyDated || s.parsed.dateFromName) && inRange;
     });
   }
   function addEntry(side, name, sheets, key) {
@@ -2536,16 +2588,32 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     box.appendChild(h('p', { class: 'pal-meta' },
       'ปล่อยออก ' + fmt(S5.all.out) + ' = กลับมาแล้ว (ออก ' + fmt(S5.returned.out) + ') + ไม่มีพาเลทมา (ออก ' + fmt(S5.emptyret.out) + ') + ค้างบนรถ ' + fmt(S5.pending.out) + ' + ไม่กลับมา ' + fmt(S5.no_return.out) + ' พาเลท',
       t.orphans ? h('span', { class: 'sub', text: 'ยังมีรับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) ที่หาเที่ยวขาออกไม่เจอ — แยกไว้ ไม่รวมในตัวเลขนี้' }) : null));
-    box.appendChild(h('h3', { class: 'sum-h', text: 'แยกตามผลเทียบรายเที่ยว' }));
+    // ---- สรุป ขาด / เกิน (เฉพาะรถที่กลับมาแล้ว) + สุทธิ ----
+    var gapShort = AG.short.out - AG.short.inn, gapOver = AG.over.inn - AG.over.out, net = gapOver - gapShort, notBack = S5.pending.out + S5.no_return.out;
+    var sgn = function (n) { return n > 0 ? '+' + fmt(n) : n < 0 ? '−' + fmt(-n) : '0'; };
+    box.appendChild(h('h3', { class: 'sum-h', text: 'สรุป ขาด / เกิน (รถที่กลับมาแล้ว)' }));
+    box.appendChild(h('div', { class: 'sum5 so3', role: 'group', 'aria-label': 'สรุปพาเลทขาดและเกิน' },
+      h('button', { type: 'button', class: 'st-tile st-short', 'aria-pressed': String(state.filter === 'short'), onclick: function () { pick('short'); } },
+        h('span', { class: 'st-l' }, h('span', { class: 'st-mk', 'aria-hidden': 'true', text: '▼' }), 'ขาด'),
+        h('span', { class: 'st-n' }, fmt(gapShort), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'รถกลับมาแล้ว แต่พาเลทน้อยกว่าที่ปล่อยออก' + (S5.emptyret.out ? ' (รวมรถที่กลับมาแต่ไม่มีพาเลท ' + fmt(S5.emptyret.out) + ')' : '') }),
+        h('span', { class: 'st-s', text: fmt(AG.short.trips) + ' เที่ยว · ออก ' + fmt(AG.short.out) + ' → รับ ' + fmt(AG.short.inn) + ' พาเลท' })),
+      h('button', { type: 'button', class: 'st-tile st-over', 'aria-pressed': String(state.filter === 'over'), onclick: function () { pick('over'); } },
+        h('span', { class: 'st-l' }, h('span', { class: 'st-mk', 'aria-hidden': 'true', text: '▲' }), 'เกิน'),
+        h('span', { class: 'st-n' }, fmt(gapOver), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'รถกลับมาแล้ว และพาเลทมากกว่าที่ปล่อยออก' }),
+        h('span', { class: 'st-s', text: fmt(AG.over.trips) + ' เที่ยว · ออก ' + fmt(AG.over.out) + ' → รับ ' + fmt(AG.over.inn) + ' พาเลท' })),
+      h('div', { class: 'st-tile st-net' },
+        h('span', { class: 'st-l', text: 'สุทธิ (เกิน − ขาด)' }),
+        h('span', { class: 'st-n' }, sgn(net), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: net > 0 ? 'รวมแล้วรถที่กลับมาแล้ว กลับมา “มากกว่า” ที่ปล่อยออก' : net < 0 ? 'รวมแล้วรถที่กลับมาแล้ว กลับมา “น้อยกว่า” ที่ปล่อยออก' : 'รวมแล้วเท่ากับที่ปล่อยออก' }),
+        h('span', { class: 'st-s', text: 'ยังไม่กลับอีก ' + fmt(notBack) + ' พาเลท (ค้างบนรถ + ไม่กลับมา) · นับรวมทั้งหมด: รับ ' + fmt(S5.all.inn) + ' − ออก ' + fmt(S5.all.out) + ' = ' + sgn(S5.all.inn - S5.all.out) }))));
+    box.appendChild(h('h3', { class: 'sum-h', text: 'อื่น ๆ' }));
     var CARDS = [
       ['ok', 'ตรงกัน', 'รถกลับมาแล้ว พาเลทเท่ากับที่ปล่อยออก', function (x) { return [x.out, 'พาเลท']; }],
-      ['short', 'ขาด', 'รถกลับมาแล้ว แต่พาเลทน้อยกว่าที่ปล่อยออก', function (x) { return [x.out - x.inn, 'พาเลทที่ขาด']; }],
-      ['over', 'เกิน', 'รถกลับมาแล้ว และพาเลทมากกว่าที่ปล่อยออก', function (x) { return [x.inn - x.out, 'พาเลทที่เกิน']; }],
-      ['no_return', 'ไม่พบรับเข้า', 'ไม่เจอบันทึกรับเข้าของรถคันนี้ — อาจยังไม่กลับ หรือกลับแล้วแต่ไม่ได้ลงบันทึก/ทะเบียนไม่ตรง', function (x) { return [x.out, 'พาเลทที่ยังไม่พบรับเข้า']; }],
-      ['pending', 'รอรับเข้า', 'เพิ่งปล่อยออก ยังไม่ถึงเวลากลับ', function (x) { return [x.out, 'พาเลทที่ออกไปอยู่']; }],
       ['zero', 'ไม่มียอดพาเลท', 'ภาคจ่ายลงพาเลทขาออกเป็น 0 (และไม่มีรับเข้า)', function (x) { return [x.trips, 'เที่ยว']; }]
     ];
-    box.appendChild(h('div', { class: 'sum-board', role: 'group', 'aria-label': 'สรุปจำนวนพาเลทตามสถานะ กดเพื่อกรองรายการ' }, CARDS.map(function (u) {
+    box.appendChild(h('div', { class: 'sum-board so2', role: 'group', 'aria-label': 'ตรงกันและไม่มียอดพาเลท กดเพื่อกรองรายการ' }, CARDS.map(function (u) {
       var x = AG[u[0]], v = u[3](x), on = state.filter === u[0];
       var flow = u[0] === 'zero' ? null : u[0] === 'no_return' || u[0] === 'pending' ? 'ออก ' + fmt(x.out) + ' พาเลท → ยังไม่ได้รับ' : 'ออก ' + fmt(x.out) + ' → รับ ' + fmt(x.inn) + ' พาเลท';
       return h('button', { type: 'button', class: 'st-tile st-' + u[0], 'aria-pressed': String(on),
@@ -2954,7 +3022,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     clear(li);
     var icon = st === 'done' ? '✓' : st === 'error' ? '⚠' : '…';
     var text = st === 'start' ? 'กำลังดึง…' : st === 'done'
-      ? info.file.title + ' · แก้ไขล่าสุด ' + fmtStamp(info.file.modifiedTime) + ' · ' + (Math.round(info.bytes / 1024)).toLocaleString('en-US') + ' KB'
+      ? (info.files && info.files.length > 1 ? info.files.length + ' ไฟล์: ' + info.files.map(function (f) { return f.title; }).join(' + ') : info.file.title + ' · แก้ไขล่าสุด ' + fmtStamp(info.file.modifiedTime)) + ' · ' + (Math.round(info.bytes / 1024)).toLocaleString('en-US') + ' KB'
       : info.message;
     li.className = 'drive-' + st;
     li.appendChild(h('span', { class: 'ic', 'aria-hidden': 'true', text: icon }));
@@ -2962,7 +3030,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function addDriveFile(r) {
     var side = r.source.side, key = 'drive:' + r.file.id + ':' + r.file.modifiedTime;
-    state[side].files = state[side].files.filter(function (f) { return !f.driveSource || f.driveSource !== r.source.id; });  // ดึงใหม่ = แทนที่ของเดิมจาก Drive
     var sheets = readBuffer(r.file.title || r.source.label, r.buf);
     if (addEntry(side, r.file.title || r.source.label, sheets, key)) {
       var entry = state[side].files[state[side].files.length - 1];
@@ -2974,8 +3041,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     driveBusy = true; $('#btn-drive').disabled = true; clear($('#drive-list'));
     $('#drive-msg').textContent = ''; state.driveNote = '';
     syncInputs();
-    window.PalletDrive.pull(driveRow).then(function (results) {
-      var ok = 0, bad = 0;
+    window.PalletDrive.pull(driveRow, null, { from: state.from }).then(function (results) {
+      var ok = 0, bad = 0, okSrc = {};
+      results.forEach(function (r) { if (!r.error && r.source) okSrc[r.source.id] = r.source.side; });
+      Object.keys(okSrc).forEach(function (id) { var sd = okSrc[id]; state[sd].files = state[sd].files.filter(function (f) { return f.driveSource !== id; }); });   // ดึงใหม่ = แทนที่ของเดิมจาก Drive (ทุกไฟล์ของแหล่งนั้น)
       results.forEach(function (r) {
         if (r.error) { bad++; if (!r.source) $('#drive-msg').textContent = r.message; return; }
         try { addDriveFile(r); ok++; } catch (e) { bad++; driveRow(r.source, 'error', { message: 'อ่านไฟล์ไม่ได้: ' + (e && e.message ? e.message : e) }); }
@@ -3017,7 +3086,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!nOut && !nIn) { sum.textContent = window.PalletDrive && !$('#btn-drive').hidden ? 'ยังไม่มีข้อมูล — กด “ดึงใหม่จาก Drive” หรือเลือกไฟล์เอง' : 'ยังไม่มีข้อมูล — เลือกไฟล์ภาคจ่ายทั้ง 5 ภาคและไฟล์รับภูมิภาค หรือกด “ลองใช้ข้อมูลตัวอย่าง”'; return; }
     sum.appendChild(h('b', { text: 'ข้อมูลที่ใช้: ' }));
     sum.appendChild(document.createTextNode('ขาออก ' + nOut + ' ไฟล์ · ขารับเข้า ' + nIn + ' ไฟล์ · ' + sheets + ' ชีต' +
-      (state.driveNote ? ' · ' + state.driveNote + (state.driveTime ? ' เวลา ' + state.driveTime : '') : '')));
+      ' · ตั้งแต่ ' + core.fmtDate(state.from) + (state.driveNote ? ' · ' + state.driveNote + (state.driveTime ? ' เวลา ' + state.driveTime : '') : '')));
     if (state.driveBad) sum.appendChild(h('span', { class: 'warn', text: ' · มี ' + state.driveBad + ' ไฟล์ดึงไม่สำเร็จ (กด “ไฟล์และชีตที่ใช้” ดูสาเหตุ)' }));
   }
 
@@ -3046,6 +3115,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // กันไม่ให้ลากไฟล์พลาดแล้วเบราว์เซอร์เปิดไฟล์ทิ้งหน้า
   ['dragover', 'drop'].forEach(function (ev) { window.addEventListener(ev, function (e) { e.preventDefault(); }); });
 
+  var fromEl = $('#from-date');
+  fromEl.value = state.from;
+  fromEl.addEventListener('change', function () {
+    var v = fromEl.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) { fromEl.value = state.from; return; }
+    state.from = v;
+    try { localStorage.setItem('pallet-check:from', v); } catch (e) { /* ไม่เก็บถาวรก็ใช้งานต่อได้ */ }
+    ['out', 'in'].forEach(function (sd) { state[sd].files.forEach(parseEntry); });      // ติ๊กชีตใหม่ตามวันที่เริ่ม
+    if (window.PalletDrive && window.PalletDrive.mode) pullDrive(); else render();   // ดึงจาก Drive ใหม่ให้ครอบคลุมช่วงวันที่ (ไฟล์เดือนก่อนหน้า/ถัดไป)
+  });
   $('#btn-inputs').addEventListener('click', function () { state.inputsOpen = $('#inputs').hidden; syncInputs(); });
 
   $('#tol').addEventListener('input', function (e) { var v = parseFloat(e.target.value); state.tol = isFinite(v) && v >= 0 ? v : 0; renderDerived(); });
@@ -3065,6 +3144,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     state.out.files = []; state.in.files = []; state.aliases = {}; state.open = {}; state.filter = 'all'; state.q = '';
     state.tf = { on: false, region: '', date: '' }; state.bl = {}; state.tab = 'status'; state.moreOpen = false; state.inputsOpen = null; state.driveNote = ''; state.driveBad = 0;
     state.tol = 0; state.grace = 2; state.sameDay = false; state.useHq = true;
+    state.from = DEFAULT_FROM; fromEl.value = DEFAULT_FROM; try { localStorage.removeItem('pallet-check:from'); } catch (e) { /* ไม่เป็นไร */ }
     $('#tol').value = '0'; $('#grace').value = '2'; $('#same-day').checked = false; $('#use-hq').checked = true;
     say('out', ''); say('in', '');
     render();
