@@ -276,13 +276,26 @@ footer { color:var(--muted); font-size:.8125rem; padding:0 0 32px; }
 .st-m { font-size:.8125rem; line-height:1.35; opacity:.92; }
 .sum-board .st-s { margin-top:auto; font-weight:600; opacity:1; }
 .pal-sum .arrow { color:var(--muted); }
+.sum-h { margin:14px 0 4px; font-size:.9375rem; color:var(--muted); font-weight:700; }
+.sum5 { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:6px 0 8px; }
+@media (max-width: 1100px) { .sum5 { grid-template-columns:repeat(3,1fr); } }
+@media (max-width: 760px) { .sum5 { grid-template-columns:repeat(2,1fr); } }
+@media (max-width: 480px) { .sum5 { grid-template-columns:1fr; } }
+.sum5 .st-tile { min-height:150px; border:2px solid transparent; font:inherit; }
+.sum5 .st-tile[aria-pressed="true"] { border-color:currentColor; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+.sum5 .st-l { font-size:1rem; line-height:1.25; } .sum5 .st-n { font-size:2.125rem; display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; }
+.sum5 .st-n small { font-size:.8125rem; font-weight:600; }
+.sum5 .st-m { font-size:.8125rem; line-height:1.35; } .sum5 .st-s { margin-top:auto; font-weight:600; opacity:1; font-size:.8125rem; }
+.st-out { background:var(--surface-2); color:var(--text); border-color:var(--border) !important; } .st-ret { background:var(--ok-bg); color:var(--ok); }
+.st-road { background:var(--wait-bg); color:var(--wait); } .st-emp { background:var(--short-bg); color:var(--short); } .st-nor { background:var(--miss-bg); color:var(--miss); }
+.fbar { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:12px 0 0; padding:8px 12px; border-radius:10px; background:var(--surface); border:1px solid var(--border); font-size:.9375rem; }
 .pal-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 24px; margin:8px 0 6px; }
 .pal-box { display:flex; flex-direction:column; }
 .pal-box .lab { color:var(--muted); font-size:.875rem; }
 .pal-box .big { font-size:2.25rem; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
 .pal-box .big small { font-size:1rem; font-weight:600; color:var(--muted); }
 .pal-head .arrow { font-size:1.75rem; color:var(--muted); }
-.pal-meta { flex:1 1 260px; color:var(--muted); font-size:.875rem; }
+.pal-meta { flex:1 1 260px; color:var(--muted); font-size:.875rem; margin:4px 0 0; }
 .pal-meta .sub { display:block; font-size:.8125rem; margin-top:2px; }
 .st-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0 4px; }
 .st-tile { text-align:left; border:1px solid transparent; border-radius:14px; padding:12px 14px; cursor:pointer; display:flex; flex-direction:column; gap:2px; min-height:96px; }
@@ -2375,9 +2388,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- ผลลัพธ์ ----------
+  /** รถกลับมาแล้วและมีพาเลทมา / รถกลับมาแล้วแต่บันทึกพาเลทเป็น 0 (ทั้งที่ปล่อยออกมี) */
+  function isReturned(g) { return g.in.n > 0 && g.in.pal > 0; }
+  function isEmptyRet(g) { return g.in.n > 0 && g.in.pal === 0 && g.out.pal > 0; }
   var FILTERS = [
     ['all', 'ทั้งหมด', function () { return true; }],
     ['problem', 'ต้องตรวจ', function (g) { return g.status === 'no_return' || g.status === 'short' || g.status === 'over'; }],
+    ['returned', 'กลับมาแล้ว', function (g) { return isReturned(g); }],
+    ['emptyret', 'กลับมาแล้วแต่ไม่มีพาเลทมา', function (g) { return isEmptyRet(g); }],
     ['no_return', 'ไม่พบรับเข้า', function (g) { return g.status === 'no_return'; }],
     ['short', 'กลับน้อยกว่า', function (g) { return g.status === 'short'; }],
     ['over', 'กลับมากกว่า', function (g) { return g.status === 'over'; }],
@@ -2488,16 +2506,37 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (cv.missing.length) {      // ครบ 5 ภาคแล้วไม่ต้องแสดง · ขาดภาคไหนต้องเห็นทันที
       box.appendChild(h('p', { class: 'cov-warn', role: 'alert' }, '⚠ ไม่มีข้อมูลภาคจ่าย' + cv.missing.join(' / ') + ' — ต้องดูจากภาคจ่ายทั้ง 5 ภาค ผลด้านล่างจึงยังไม่ครบ'));
     }
-    // ---- สรุปจำนวนพาเลท: รวมพาเลทขาออก/ขารับ แล้วแตกตามสถานะ (ผลรวมทุกใบ = ยอดรวมด้านบน) ----
+    // ---- สรุปพาเลท 5 หัวข้อ (กดเพื่อดูรายละเอียดเที่ยวในหัวข้อนั้น) ----
+    var rowsAll = c.res.rows;
+    var S5 = { all: { trips: rowsAll.length, out: 0, inn: 0 }, returned: { trips: 0, out: 0, inn: 0 }, emptyret: { trips: 0, out: 0, inn: 0 }, pending: { trips: 0, out: 0, inn: 0 }, no_return: { trips: 0, out: 0, inn: 0 } };
     var AG = {};
     ['ok', 'short', 'over', 'no_return', 'pending', 'zero'].forEach(function (k) { AG[k] = { trips: 0, out: 0, inn: 0 }; });
-    c.res.rows.forEach(function (g) { var x = AG[g.status]; if (x) { x.trips++; x.out += g.out.pal; x.inn += g.in.pal; } });
-    box.appendChild(h('div', { class: 'pal-head' },
-      h('div', { class: 'pal-box' }, h('span', { class: 'lab', text: 'ขาออก (ภาคจ่ายปล่อยรถ)' }), h('span', { class: 'big' }, fmt(t.outPal), h('small', { text: ' พาเลท' }))),
-      h('span', { class: 'arrow', 'aria-hidden': 'true', text: '→' }),
-      h('div', { class: 'pal-box' }, h('span', { class: 'lab', text: 'ขารับ (รับภูมิภาค)' }), h('span', { class: 'big' }, fmt(t.inPal), h('small', { text: ' พาเลท' }))),
-      h('div', { class: 'pal-meta' }, fmt(t.rows) + ' เที่ยว · ' + fmt(t.plates) + ' คัน',
-        t.orphans ? h('span', { class: 'sub', text: 'ยังมีรับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) ที่หาเที่ยวขาออกไม่เจอ — แยกไว้ ไม่รวมในตัวเลขนี้' }) : null)));
+    rowsAll.forEach(function (g) {
+      S5.all.out += g.out.pal; S5.all.inn += g.in.pal;
+      var k = isReturned(g) ? 'returned' : isEmptyRet(g) ? 'emptyret' : g.status === 'pending' ? 'pending' : g.status === 'no_return' ? 'no_return' : null;
+      if (k) { S5[k].trips++; S5[k].out += g.out.pal; S5[k].inn += g.in.pal; }
+      var x = AG[g.status]; if (x) { x.trips++; x.out += g.out.pal; x.inn += g.in.pal; }
+    });
+    var pick = function (id) { state.filter = state.filter === id ? 'all' : id; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); };
+    var CARD5 = [
+      ['all', 'st-out', 'ปล่อยออก', fmt(S5.all.out), 'พาเลท', 'พาเลทที่ภาคจ่ายปล่อยออกทั้งหมด', fmt(S5.all.trips) + ' เที่ยว · ' + fmt(t.plates) + ' คัน'],
+      ['returned', 'st-ret', 'กลับมาแล้ว', fmt(S5.returned.inn), 'พาเลท', 'พาเลทที่รับภูมิภาคบันทึกรับเข้าแล้ว', fmt(S5.returned.trips) + ' เที่ยว · เที่ยวเหล่านี้ปล่อยออก ' + fmt(S5.returned.out) + ' พาเลท'],
+      ['pending', 'st-road', 'ค้างบนรถ', fmt(S5.pending.out), 'พาเลท', 'รถยังอยู่ระหว่างทาง ยังไม่ถึงเวลากลับ (รอรับเข้า)', fmt(S5.pending.trips) + ' เที่ยว'],
+      ['emptyret', 'st-emp', 'กลับมาแล้วแต่ไม่มีพาเลทมา', fmt(S5.emptyret.out), 'พาเลทที่ไม่ได้กลับ', 'รถกลับมาแล้ว แต่บันทึกรับเข้าพาเลทเป็น 0', fmt(S5.emptyret.trips) + ' เที่ยว'],
+      ['no_return', 'st-nor', 'ไม่กลับมา', fmt(S5.no_return.out), 'พาเลทที่ยังไม่กลับ', 'ไม่พบบันทึกรับเข้าของรถคันนี้ (อาจยังไม่กลับ หรือกลับแล้วแต่ไม่ได้ลงบันทึก)', fmt(S5.no_return.trips) + ' เที่ยว']
+    ];
+    box.appendChild(h('h3', { class: 'sum-h', text: 'สรุปพาเลท (กดหัวข้อเพื่อดูรายเที่ยว)' }));
+    box.appendChild(h('div', { class: 'sum5', role: 'group', 'aria-label': 'สรุปพาเลท กดเพื่อดูรายละเอียด' }, CARD5.map(function (u) {
+      var on = state.filter === u[0] && u[0] !== 'all';
+      return h('button', { type: 'button', class: 'st-tile ' + u[1], 'aria-pressed': String(on), onclick: function () { if (u[0] === 'all') { state.filter = 'all'; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); } else pick(u[0]); } },
+        h('span', { class: 'st-l', text: u[2] }),
+        h('span', { class: 'st-n' }, u[3], h('small', { text: ' ' + u[4] })),
+        h('span', { class: 'st-m', text: u[5] }), h('span', { class: 'st-s', text: u[6] }));
+    })));
+    box.appendChild(h('p', { class: 'pal-meta' },
+      'ปล่อยออก ' + fmt(S5.all.out) + ' = กลับมาแล้ว (ออก ' + fmt(S5.returned.out) + ') + ไม่มีพาเลทมา (ออก ' + fmt(S5.emptyret.out) + ') + ค้างบนรถ ' + fmt(S5.pending.out) + ' + ไม่กลับมา ' + fmt(S5.no_return.out) + ' พาเลท',
+      t.orphans ? h('span', { class: 'sub', text: 'ยังมีรับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) ที่หาเที่ยวขาออกไม่เจอ — แยกไว้ ไม่รวมในตัวเลขนี้' }) : null));
+    box.appendChild(h('h3', { class: 'sum-h', text: 'แยกตามผลเทียบรายเที่ยว' }));
     var CARDS = [
       ['ok', 'ตรงกัน', 'รถกลับมาแล้ว พาเลทเท่ากับที่ปล่อยออก', function (x) { return [x.out, 'พาเลท']; }],
       ['short', 'ขาด', 'รถกลับมาแล้ว แต่พาเลทน้อยกว่าที่ปล่อยออก', function (x) { return [x.out - x.inn, 'พาเลทที่ขาด']; }],
@@ -2524,6 +2563,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var pTrips = h('div', { id: 'panel-trips' });
     box.appendChild(pTrips);
     var fbox = h('div', { class: 'filters', role: 'group', 'aria-label': 'กรองตามสถานะ' });
+    if (state.filter !== 'all' && state.filter !== 'problem') {
+      var fdef = FILTERS.filter(function (f) { return f[0] === state.filter; })[0];
+      if (fdef) {
+        var sel = tfRows(c).filter(fdef[2]), so = 0, si = 0; sel.forEach(function (g) { so += g.out.pal; si += g.in.pal; });
+        pTrips.appendChild(h('div', { class: 'fbar' }, 'กำลังแสดง: ', h('b', { text: { pending: 'ค้างบนรถ (รอรับเข้า)', no_return: 'ไม่กลับมา (ไม่พบรับเข้า)' }[fdef[0]] || fdef[1] }), ' · ' + fmt(sel.length) + ' เที่ยว · ขาออก ' + fmt(so) + ' พาเลท · ขารับ ' + fmt(si) + ' พาเลท',
+          h('button', { type: 'button', class: 'btn small', onclick: function () { state.filter = 'all'; state.limit = 150; renderResults(c); } }, 'แสดงทั้งหมด')));
+      }
+    }
     if (state.tf.on) {
       pTrips.appendChild(h('div', { class: 'tf' }, 'กรองจากหน้าสถานะ: ',
         h('b', { text: (state.tf.region ? 'ภาค' + state.tf.region : 'ไม่ระบุภาค') + (state.tf.date ? ' · ' + core.fmtDate(state.tf.date) : '') }),
