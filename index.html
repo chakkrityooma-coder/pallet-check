@@ -289,6 +289,11 @@ table.dtab tfoot th, table.dtab tfoot td { font-weight:800; background:var(--sur
 table.dtab tr.on td { background:var(--ok-bg); }
 table.dtab .c-short { color:var(--short); } table.dtab .c-over { color:var(--over); } table.dtab .c-miss { color:var(--miss); }
 table.dtab button.linklike { font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+.where-bar { margin:4px 0 8px; }
+table.wtab td.m { color:var(--muted); font-size:.8125rem; } table.wtab td.b { font-weight:800; font-size:1rem; }
+table.wtab .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; background:var(--zero); }
+table.wtab .dot.s-ok { background:var(--ok); } table.wtab .dot.s-short { background:#f59e0b; } table.wtab .dot.s-wait { background:#8b5cf6; } table.wtab .dot.s-miss { background:#ef4444; }
+table.dtab .c-muted { color:var(--muted); }
 .sum-h { margin:14px 0 4px; font-size:.9375rem; color:var(--muted); font-weight:700; }
 .sum5 { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:6px 0 8px; }
 @media (max-width: 1100px) { .sum5 { grid-template-columns:repeat(3,1fr); } }
@@ -2462,7 +2467,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ['over', 'กลับมากกว่า', function (g) { return g.status === 'over'; }],
     ['pending', 'รอรับเข้า', function (g) { return g.status === 'pending'; }],
     ['ok', 'ตรงกัน', function (g) { return g.status === 'ok'; }],
-    ['zero', 'ไม่มียอด', function (g) { return g.status === 'zero'; }]
+    ['outstanding', 'ค้างอยู่ (ยังไม่ถึงคลังครบ)', function (g) { return g.status === 'short' || g.status === 'pending' || g.status === 'no_return'; }],
+    ['zero', 'ไม่นับ (พาเลทออก 0)', function (g) { return !(g.out.pal > 0); }]
   ];
   function filterFn() { return FILTERS.filter(function (f) { return f[0] === state.filter; })[0][2]; }
   function depOrder(g) { return (core.dayIndex(g.date) || 0) * 1440 + (g.tm || 0); }
@@ -2567,107 +2573,121 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (cv.missing.length) {      // ครบ 5 ภาคแล้วไม่ต้องแสดง · ขาดภาคไหนต้องเห็นทันที
       box.appendChild(h('p', { class: 'cov-warn', role: 'alert' }, '⚠ ไม่มีข้อมูลภาคจ่าย' + cv.missing.join(' / ') + ' — ต้องดูจากภาคจ่ายทั้ง 5 ภาค ผลด้านล่างจึงยังไม่ครบ'));
     }
-    // ---- สรุปพาเลท 5 หัวข้อ (กดเพื่อดูรายละเอียดเที่ยวในหัวข้อนั้น) ----
-    var rowsAll = c.res.rows;
-    var S5 = { all: { trips: rowsAll.length, out: 0, inn: 0 }, returned: { trips: 0, out: 0, inn: 0 }, emptyret: { trips: 0, out: 0, inn: 0 }, pending: { trips: 0, out: 0, inn: 0 }, no_return: { trips: 0, out: 0, inn: 0 } };
-    var AG = {};
-    ['ok', 'short', 'over', 'no_return', 'pending', 'zero'].forEach(function (k) { AG[k] = { trips: 0, out: 0, inn: 0 }; });
+    // ---- สรุปพาเลท: นับเฉพาะเที่ยวที่ภาคจ่ายลงพาเลท (พาเลทออก > 0) และเฉพาะรถที่ปล่อยตั้งแต่วันที่เริ่ม ----
+    var rowsAll = c.res.rows.filter(function (g) { return g.out.pal > 0; });
+    var skipRows = c.res.rows.filter(function (g) { return !(g.out.pal > 0); }), skipIn = 0;
+    skipRows.forEach(function (g) { skipIn += g.in.pal; });
+    var K = { out: 0, inn: 0, A: 0, B: 0, B0: 0, C: 0, D: 0, E: 0, tA: 0, tB: 0, tB0: 0, tC: 0, tD: 0, tE: 0 }, platesSet = {};
     rowsAll.forEach(function (g) {
-      S5.all.out += g.out.pal; S5.all.inn += g.in.pal;
-      var k = isReturned(g) ? 'returned' : isEmptyRet(g) ? 'emptyret' : g.status === 'pending' ? 'pending' : g.status === 'no_return' ? 'no_return' : null;
-      if (k) { S5[k].trips++; S5[k].out += g.out.pal; S5[k].inn += g.in.pal; }
-      var x = AG[g.status]; if (x) { x.trips++; x.out += g.out.pal; x.inn += g.in.pal; }
+      K.out += g.out.pal; K.inn += g.in.pal; platesSet[g.plate] = 1;
+      if (g.in.n > 0 && g.in.pal > 0) K.tA++;
+      if (g.status === 'ok') K.A += g.out.pal;
+      else if (g.status === 'short') { K.A += g.in.pal; K.B += g.out.pal - g.in.pal; K.tB++; if (g.in.n > 0 && g.in.pal === 0) { K.B0 += g.out.pal; K.tB0++; } }
+      else if (g.status === 'over') { K.A += g.out.pal; K.E += g.in.pal - g.out.pal; K.tE++; }
+      else if (g.status === 'pending') { K.C += g.out.pal; K.tC++; }
+      else if (g.status === 'no_return') { K.D += g.out.pal; K.tD++; }
     });
-    var pick = function (id) { state.filter = state.filter === id ? 'all' : id; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); };
-    var CARD5 = [
-      ['all', 'st-out', 'ปล่อยออก', fmt(S5.all.out), 'พาเลท', 'พาเลทที่ภาคจ่ายปล่อยออกทั้งหมด', fmt(S5.all.trips) + ' เที่ยว · ' + fmt(t.plates) + ' คัน'],
-      ['returned', 'st-ret', 'กลับมาแล้ว', fmt(S5.returned.inn), 'พาเลท', 'พาเลทที่รับภูมิภาคบันทึกรับเข้าแล้ว', fmt(S5.returned.trips) + ' เที่ยว · เที่ยวเหล่านี้ปล่อยออก ' + fmt(S5.returned.out) + ' พาเลท'],
-      ['pending', 'st-road', 'ค้างบนรถ', fmt(S5.pending.out), 'พาเลท', 'รถยังอยู่ระหว่างทาง ยังไม่ถึงเวลากลับ (รอรับเข้า)', fmt(S5.pending.trips) + ' เที่ยว'],
-      ['emptyret', 'st-emp', 'กลับมาแล้วแต่ไม่มีพาเลทมา', fmt(S5.emptyret.out), 'พาเลทที่ไม่ได้กลับ', 'รถกลับมาแล้ว แต่บันทึกรับเข้าพาเลทเป็น 0', fmt(S5.emptyret.trips) + ' เที่ยว'],
-      ['no_return', 'st-nor', 'ไม่กลับมา', fmt(S5.no_return.out), 'พาเลทที่ยังไม่กลับ', 'ไม่พบบันทึกรับเข้าของรถคันนี้ (อาจยังไม่กลับ หรือกลับแล้วแต่ไม่ได้ลงบันทึก)', fmt(S5.no_return.trips) + ' เที่ยว']
+    var nPlates = Object.keys(platesSet).length, stuck = K.B + K.C + K.D;
+    var go = function (id) { state.filter = (id === 'all' || state.filter === id) ? 'all' : id; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); };
+    var CARD3 = [
+      ['all', 'st-out', '① ยอดออก', fmt(K.out), 'พาเลท', 'พาเลทที่ภาคจ่ายปล่อยออก (เฉพาะเที่ยวที่ลงพาเลท)', fmt(rowsAll.length) + ' เที่ยว · ' + fmt(nPlates) + ' คัน'],
+      ['returned', 'st-ret', '② กลับมาแล้ว', fmt(K.inn), 'พาเลท', 'พาเลทที่รถคันเดียวกับที่ปล่อยกลับมา (รถอื่นที่เข้ามาไม่นับ)', fmt(K.tA) + ' เที่ยวที่รถกลับมาพร้อมพาเลท'],
+      ['outstanding', 'st-emp', '③ ค้างบนรถ (ยังไม่ถึงคลัง)', fmt(stuck), 'พาเลท', 'ปล่อยออกแล้วแต่ยังไม่กลับมาครบ — แยกว่าอยู่ที่ไหนในตารางข้อ ④', fmt(K.tB + K.tC + K.tD) + ' เที่ยว']
     ];
-    box.appendChild(h('h3', { class: 'sum-h', text: 'สรุปพาเลท (กดหัวข้อเพื่อดูรายเที่ยว)' }));
-    box.appendChild(h('div', { class: 'sum5', role: 'group', 'aria-label': 'สรุปพาเลท กดเพื่อดูรายละเอียด' }, CARD5.map(function (u) {
+    box.appendChild(h('h3', { class: 'sum-h', text: 'สรุปพาเลท (กดการ์ดหรือแถวเพื่อดูรายเที่ยว)' }));
+    box.appendChild(h('div', { class: 'sum5 so3', role: 'group', 'aria-label': 'สรุปยอดออก กลับมาแล้ว ค้างบนรถ' }, CARD3.map(function (u) {
       var on = state.filter === u[0] && u[0] !== 'all';
-      return h('button', { type: 'button', class: 'st-tile ' + u[1], 'aria-pressed': String(on), onclick: function () { if (u[0] === 'all') { state.filter = 'all'; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); } else pick(u[0]); } },
-        h('span', { class: 'st-l', text: u[2] }),
-        h('span', { class: 'st-n' }, u[3], h('small', { text: ' ' + u[4] })),
+      return h('button', { type: 'button', class: 'st-tile ' + u[1], 'aria-pressed': String(on), onclick: function () { go(u[0]); } },
+        h('span', { class: 'st-l', text: u[2] }), h('span', { class: 'st-n' }, u[3], h('small', { text: ' ' + u[4] })),
         h('span', { class: 'st-m', text: u[5] }), h('span', { class: 'st-s', text: u[6] }));
     })));
     box.appendChild(h('p', { class: 'pal-meta' },
-      'ปล่อยออก ' + fmt(S5.all.out) + ' = กลับมาแล้ว (ออก ' + fmt(S5.returned.out) + ') + ไม่มีพาเลทมา (ออก ' + fmt(S5.emptyret.out) + ') + ค้างบนรถ ' + fmt(S5.pending.out) + ' + ไม่กลับมา ' + fmt(S5.no_return.out) + ' พาเลท',
-      t.orphans ? h('span', { class: 'sub', text: 'ยังมีรับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) ที่หาเที่ยวขาออกไม่เจอ — แยกไว้ ไม่รวมในตัวเลขนี้' }) : null));
-    // ---- สรุป ขาด / เกิน (เฉพาะรถที่กลับมาแล้ว) + สุทธิ ----
-    var gapShort = AG.short.out - AG.short.inn, gapOver = AG.over.inn - AG.over.out, net = gapOver - gapShort, notBack = S5.pending.out + S5.no_return.out;
+      'ปล่อยออก ' + fmt(K.out) + ' = ถึงคลังแล้ว ' + fmt(K.A) + ' + ค้างอยู่ ' + fmt(stuck) + ' พาเลท',
+      h('span', { class: 'sub', text: 'นับเฉพาะรถที่ปล่อยตั้งแต่วันที่เริ่ม แล้วตามหาการกลับมาของ “รถคันนั้น” เท่านั้น · ไม่นับ ' + fmt(skipRows.length) + ' เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0' + (skipIn ? ' (และรับเข้า ' + fmt(skipIn) + ' พาเลทที่ผูกกับเที่ยวเหล่านั้น)' : '') }),
+      t.orphans ? h('span', { class: 'sub', text: 'รับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) เป็นรถที่หาเที่ยวปล่อยออกไม่เจอ — ไม่นับ' }) : null));
+
+    // ---- ④ พาเลทอยู่ที่ไหน ----
+    var WH = [
+      ['returned', 's-ok', 'ถึงคลังแล้ว', K.A, K.tA, 'พาเลทที่รถกลับมาถึงคลังตามที่ปล่อยออก'],
+      ['short', 's-short', 'ค้างที่ปลายทาง (รถกลับมาแล้วแต่พาเลทไม่ครบ)', K.B, K.tB, 'ปล่อยไปแต่รถกลับมาไม่ได้พามาด้วย' + (K.tB0 ? ' (รวมรถที่กลับมาแต่ไม่มีพาเลท ' + fmt(K.B0) + ' พาเลท · ' + fmt(K.tB0) + ' เที่ยว)' : '')],
+      ['pending', 's-wait', 'ค้างบนรถ ระหว่างทาง (รอรับเข้า)', K.C, K.tC, 'รถเพิ่งออก ยังไม่ถึงเวลากลับ'],
+      ['no_return', 's-miss', 'รถยังไม่กลับ / ไม่พบรับเข้า', K.D, K.tD, 'ไม่เจอบันทึกรับเข้าของรถคันนี้ (อาจยังไม่กลับ หรือกลับแล้วแต่ไม่ได้ลงบันทึก)']
+    ];
+    box.appendChild(h('h3', { class: 'sum-h', text: '④ พาเลทอยู่ที่ไหนเท่าไร (จากยอดที่ปล่อยออก)' }));
+    var pc = function (v) { return K.out ? (100 * v / K.out) : 0; };
+    box.appendChild(h('div', { class: 'bar where-bar', role: 'img', 'aria-label': 'สัดส่วนที่อยู่ของพาเลทที่ปล่อยออก: ' + WH.map(function (w) { return w[2] + ' ' + fmt(w[3]); }).join(' · ') },
+      WH.filter(function (w) { return w[3] > 0; }).map(function (w) { return h('span', { class: w[1], style: 'width:' + pc(w[3]) + '%' }); })));
+    var wbody = h('tbody', null, WH.map(function (w) {
+      var on = state.filter === w[0];
+      return h('tr', { class: on ? 'on' : '' },
+        h('td', null, h('button', { type: 'button', class: 'linklike', 'aria-pressed': String(on), onclick: function () { go(w[0]); } }, h('span', { class: 'dot ' + w[1], 'aria-hidden': 'true' }), w[2])),
+        h('td', { class: 'r b', text: fmt(w[3]) }), h('td', { class: 'r', text: fmt(w[4]) + ' เที่ยว' }), h('td', { class: 'm', text: w[5] }));
+    }));
+    var wfoot = h('tfoot', null,
+      h('tr', null, h('th', { scope: 'row', text: 'รวมที่ปล่อยออก' }), h('td', { class: 'r b', text: fmt(WH[0][3] + WH[1][3] + WH[2][3] + WH[3][3]) }), h('td', { class: 'r', text: fmt(rowsAll.length) + ' เที่ยว' }), h('td', { class: 'm', text: WH[0][3] + WH[1][3] + WH[2][3] + WH[3][3] === K.out ? 'ตรงกับยอดออก ✓' : 'ต่างจากยอดออกเพราะยอมต่างได้ ' + fmt(c.res.tol) + ' พาเลท' })),
+      h('tr', { class: state.filter === 'over' ? 'on' : '' }, h('td', null, h('button', { type: 'button', class: 'linklike', 'aria-pressed': String(state.filter === 'over'), onclick: function () { go('over'); } }, '+ รับเพิ่มเกินที่ปล่อย')), h('td', { class: 'r b c-over', text: fmt(K.E) }), h('td', { class: 'r', text: fmt(K.tE) + ' เที่ยว' }),
+        h('td', { class: 'm', text: 'พาเลทที่รถกลับมามากกว่าที่ปล่อยของเที่ยวนั้น (เช่น คืนของเที่ยวก่อน) — ไม่รวมในยอดออก' })));
+    box.appendChild(h('div', { class: 'tablewrap' }, h('table', { class: 'dtab wtab' }, h('caption', { class: 'sr-only', text: 'พาเลทอยู่ที่ไหน' }),
+      h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'อยู่ที่ไหน' }), h('th', { scope: 'col', class: 'r', text: 'พาเลท' }), h('th', { scope: 'col', class: 'r', text: 'เที่ยว' }), h('th', { scope: 'col', text: 'ความหมาย' }))), wbody, wfoot)));
+
+    // ---- สรุป ขาด / เกิน (รถที่กลับมาแล้ว) + สุทธิ ----
+    var gapShort = K.B, gapOver = K.E, net = gapOver - gapShort, notBack = K.C + K.D;
     var sgn = function (n) { return n > 0 ? '+' + fmt(n) : n < 0 ? '−' + fmt(-n) : '0'; };
+    var AGs = { trips: K.tB, out: 0, inn: 0 }, AGo = { trips: K.tE, out: 0, inn: 0 };
+    rowsAll.forEach(function (g) { if (g.status === 'short') { AGs.out += g.out.pal; AGs.inn += g.in.pal; } else if (g.status === 'over') { AGo.out += g.out.pal; AGo.inn += g.in.pal; } });
     box.appendChild(h('h3', { class: 'sum-h', text: 'สรุป ขาด / เกิน (รถที่กลับมาแล้ว)' }));
     box.appendChild(h('div', { class: 'sum5 so3', role: 'group', 'aria-label': 'สรุปพาเลทขาดและเกิน' },
-      h('button', { type: 'button', class: 'st-tile st-short', 'aria-pressed': String(state.filter === 'short'), onclick: function () { pick('short'); } },
+      h('button', { type: 'button', class: 'st-tile st-short', 'aria-pressed': String(state.filter === 'short'), onclick: function () { go('short'); } },
         h('span', { class: 'st-l' }, h('span', { class: 'st-mk', 'aria-hidden': 'true', text: '▼' }), 'ขาด'),
         h('span', { class: 'st-n' }, fmt(gapShort), h('small', { text: ' พาเลท' })),
-        h('span', { class: 'st-m', text: 'รถกลับมาแล้ว แต่พาเลทน้อยกว่าที่ปล่อยออก' + (S5.emptyret.out ? ' (รวมรถที่กลับมาแต่ไม่มีพาเลท ' + fmt(S5.emptyret.out) + ')' : '') }),
-        h('span', { class: 'st-s', text: fmt(AG.short.trips) + ' เที่ยว · ออก ' + fmt(AG.short.out) + ' → รับ ' + fmt(AG.short.inn) + ' พาเลท' })),
-      h('button', { type: 'button', class: 'st-tile st-over', 'aria-pressed': String(state.filter === 'over'), onclick: function () { pick('over'); } },
+        h('span', { class: 'st-m', text: 'รถกลับมาแล้ว แต่พาเลทน้อยกว่าที่ปล่อยออก' + (K.B0 ? ' (รวมรถที่กลับมาแต่ไม่มีพาเลท ' + fmt(K.B0) + ')' : '') }),
+        h('span', { class: 'st-s', text: fmt(AGs.trips) + ' เที่ยว · ออก ' + fmt(AGs.out) + ' → รับ ' + fmt(AGs.inn) + ' พาเลท' })),
+      h('button', { type: 'button', class: 'st-tile st-over', 'aria-pressed': String(state.filter === 'over'), onclick: function () { go('over'); } },
         h('span', { class: 'st-l' }, h('span', { class: 'st-mk', 'aria-hidden': 'true', text: '▲' }), 'เกิน'),
         h('span', { class: 'st-n' }, fmt(gapOver), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'รถกลับมาแล้ว และพาเลทมากกว่าที่ปล่อยออก' }),
-        h('span', { class: 'st-s', text: fmt(AG.over.trips) + ' เที่ยว · ออก ' + fmt(AG.over.out) + ' → รับ ' + fmt(AG.over.inn) + ' พาเลท' })),
+        h('span', { class: 'st-s', text: fmt(AGo.trips) + ' เที่ยว · ออก ' + fmt(AGo.out) + ' → รับ ' + fmt(AGo.inn) + ' พาเลท' })),
       h('div', { class: 'st-tile st-net' },
         h('span', { class: 'st-l', text: 'สุทธิ (เกิน − ขาด)' }),
         h('span', { class: 'st-n' }, sgn(net), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: net > 0 ? 'รวมแล้วรถที่กลับมาแล้ว กลับมา “มากกว่า” ที่ปล่อยออก' : net < 0 ? 'รวมแล้วรถที่กลับมาแล้ว กลับมา “น้อยกว่า” ที่ปล่อยออก' : 'รวมแล้วเท่ากับที่ปล่อยออก' }),
-        h('span', { class: 'st-s', text: 'ยังไม่กลับอีก ' + fmt(notBack) + ' พาเลท (ค้างบนรถ + ไม่กลับมา) · นับรวมทั้งหมด: รับ ' + fmt(S5.all.inn) + ' − ออก ' + fmt(S5.all.out) + ' = ' + sgn(S5.all.inn - S5.all.out) }))));
-    // ---- สรุปรายวัน: นับตามวันที่ปล่อยออก / นับตามวันที่รับเข้า (ให้เห็นว่ายอดมาจากวันไหน) ----
+        h('span', { class: 'st-s', text: 'ยังไม่กลับอีก ' + fmt(notBack) + ' พาเลท (ค้างบนรถ + ไม่กลับมา) · นับรวมทั้งหมด: รับ ' + fmt(K.inn) + ' − ออก ' + fmt(K.out) + ' = ' + sgn(K.inn - K.out) }))));
+
+    // ---- สรุปรายวัน: นับตามวันที่ปล่อยออก / นับตามวันที่รับเข้า ----
     var DAYS = {}, RECV = {};
+    var dayOf = function (k) { return DAYS[k] = DAYS[k] || { trips: 0, out: 0, inn: 0, short: 0, over: 0, notback: 0, skip: 0 }; };
     rowsAll.forEach(function (g) {
-      var d = DAYS[g.date] = DAYS[g.date] || { trips: 0, out: 0, inn: 0, short: 0, over: 0, notback: 0 };
+      var d = dayOf(g.date);
       d.trips++; d.out += g.out.pal; d.inn += g.in.pal;
       if (g.status === 'short') d.short += g.out.pal - g.in.pal;
       else if (g.status === 'over') d.over += g.in.pal - g.out.pal;
       else if (g.status === 'pending' || g.status === 'no_return') d.notback += g.out.pal;
       g.returns.forEach(function (r) { var x = RECV[r.d] = RECV[r.d] || { match: 0, orph: 0 }; x.match += r.pal; });
     });
+    skipRows.forEach(function (g) { dayOf(g.date).skip++; g.returns.forEach(function (r) { var x = RECV[r.d] = RECV[r.d] || { match: 0, orph: 0 }; x.orph += r.pal; }); });
     (c.res.orphans || []).forEach(function (o) { var x = RECV[o.d] = RECV[o.d] || { match: 0, orph: 0 }; x.orph += o.pal; });
     var dkeys = Object.keys(DAYS).sort(), rkeys = Object.keys(RECV).sort();
-    var tot = { trips: 0, out: 0, inn: 0, short: 0, over: 0, notback: 0 }; dkeys.forEach(function (k) { Object.keys(tot).forEach(function (f) { tot[f] += DAYS[k][f]; }); });
+    var tot = { trips: 0, out: 0, inn: 0, short: 0, over: 0, notback: 0, skip: 0 }; dkeys.forEach(function (k) { Object.keys(tot).forEach(function (f) { tot[f] += DAYS[k][f]; }); });
     var rt = { match: 0, orph: 0 }; rkeys.forEach(function (k) { rt.match += RECV[k].match; rt.orph += RECV[k].orph; });
     var td = function (v, cls) { return h('td', { class: 'r' + (cls ? ' ' + cls : ''), text: v === 0 ? '–' : fmt(v) }); };
     box.appendChild(h('h3', { class: 'sum-h', text: 'สรุปรายวัน' }));
-    box.appendChild(h('p', { class: 'pal-meta', text: 'ขาออก = นับตามวันที่ปล่อยรถ · ขารับ = พาเลทที่รถคันเดียวกันกลับมาหลังเวลาปล่อย (จนถึงก่อนปล่อยเที่ยวถัดไป) จึงอาจเป็นวันถัดไปได้ — กดวันที่เพื่อดูรายเที่ยวของวันนั้น' }));
+    box.appendChild(h('p', { class: 'pal-meta', text: 'ขาออก = นับตามวันที่ปล่อยรถ · ขารับ = พาเลทที่ “รถคันเดียวกัน” กลับมาหลังเวลาปล่อย (จนถึงก่อนปล่อยเที่ยวถัดไป) จึงอาจเป็นวันถัดไปได้ — กดวันที่เพื่อดูรายเที่ยวของวันนั้น' }));
     var t1 = h('table', { class: 'dtab' }, h('caption', { class: 'sr-only', text: 'สรุปพาเลทตามวันที่ปล่อยออก' }),
       h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'ปล่อยวันที่' }), h('th', { scope: 'col', class: 'r', text: 'เที่ยว' }), h('th', { scope: 'col', class: 'r', text: 'ขาออก' }), h('th', { scope: 'col', class: 'r', text: 'ขารับ (ของเที่ยวนั้น)' }),
-        h('th', { scope: 'col', class: 'r', text: 'ขาด' }), h('th', { scope: 'col', class: 'r', text: 'เกิน' }), h('th', { scope: 'col', class: 'r', text: 'ยังไม่กลับ' }))),
+        h('th', { scope: 'col', class: 'r', text: 'ขาด' }), h('th', { scope: 'col', class: 'r', text: 'เกิน' }), h('th', { scope: 'col', class: 'r', text: 'ยังไม่กลับ' }), h('th', { scope: 'col', class: 'r', text: 'ไม่นับ' }))),
       h('tbody', null, dkeys.map(function (k) {
         var d = DAYS[k], on = state.day === k;
         return h('tr', { class: on ? 'on' : '' }, h('td', null, h('button', { type: 'button', class: 'linklike', 'aria-pressed': String(on), onclick: function () { state.day = on ? '' : k; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); } }, core.fmtDate(k))),
-          td(d.trips), td(d.out), td(d.inn), td(d.short, 'c-short'), td(d.over, 'c-over'), td(d.notback, 'c-miss'));
+          td(d.trips), td(d.out), td(d.inn), td(d.short, 'c-short'), td(d.over, 'c-over'), td(d.notback, 'c-miss'), td(d.skip, 'c-muted'));
       })),
-      h('tfoot', null, h('tr', null, h('th', { scope: 'row', text: 'รวม' }), td(tot.trips), td(tot.out), td(tot.inn), td(tot.short, 'c-short'), td(tot.over, 'c-over'), td(tot.notback, 'c-miss'))));
+      h('tfoot', null, h('tr', null, h('th', { scope: 'row', text: 'รวม' }), td(tot.trips), td(tot.out), td(tot.inn), td(tot.short, 'c-short'), td(tot.over, 'c-over'), td(tot.notback, 'c-miss'), td(tot.skip, 'c-muted'))));
     var t2 = h('table', { class: 'dtab' }, h('caption', { class: 'sr-only', text: 'สรุปพาเลทขารับตามวันที่รับเข้า' }),
-      h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'รับเข้าวันที่' }), h('th', { scope: 'col', class: 'r', text: 'ทั้งหมด' }), h('th', { scope: 'col', class: 'r', text: 'จับคู่ได้' }), h('th', { scope: 'col', class: 'r', text: 'ไม่มีต้นทาง' }))),
+      h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'รับเข้าวันที่' }), h('th', { scope: 'col', class: 'r', text: 'ทั้งหมด' }), h('th', { scope: 'col', class: 'r', text: 'จับคู่ได้' }), h('th', { scope: 'col', class: 'r', text: 'ไม่นับ' }))),
       h('tbody', null, rkeys.map(function (k) { var x = RECV[k]; return h('tr', null, h('td', { text: core.fmtDate(k) }), td(x.match + x.orph), td(x.match), td(x.orph, 'c-miss')); })),
       h('tfoot', null, h('tr', null, h('th', { scope: 'row', text: 'รวม' }), td(rt.match + rt.orph), td(rt.match), td(rt.orph, 'c-miss'))));
     box.appendChild(h('div', { class: 'daytabs' },
       h('div', { class: 'tablewrap' }, t1),
-      h('div', null, h('div', { class: 'tablewrap' }, t2), h('p', { class: 'pal-meta', text: 'ทั้งหมด = ทุกบันทึกในไฟล์รับภูมิภาค · จับคู่ได้ = ตรงกับเที่ยวที่ปล่อย (นับเป็นขารับด้านบน) · ไม่มีต้นทาง = หาเที่ยวขาออกไม่เจอ เช่น รถที่ปล่อยก่อนวันที่เริ่ม หรือทะเบียนไม่ตรงกัน (แยกไว้ ไม่รวมใน ขารับ)' }))));
-    box.appendChild(h('h3', { class: 'sum-h', text: 'อื่น ๆ' }));
-    var CARDS = [
-      ['ok', 'ตรงกัน', 'รถกลับมาแล้ว พาเลทเท่ากับที่ปล่อยออก', function (x) { return [x.out, 'พาเลท']; }],
-      ['zero', 'ไม่มียอดพาเลท', 'ภาคจ่ายลงพาเลทขาออกเป็น 0 (และไม่มีรับเข้า)', function (x) { return [x.trips, 'เที่ยว']; }]
-    ];
-    box.appendChild(h('div', { class: 'sum-board so2', role: 'group', 'aria-label': 'ตรงกันและไม่มียอดพาเลท กดเพื่อกรองรายการ' }, CARDS.map(function (u) {
-      var x = AG[u[0]], v = u[3](x), on = state.filter === u[0];
-      var flow = u[0] === 'zero' ? null : u[0] === 'no_return' || u[0] === 'pending' ? 'ออก ' + fmt(x.out) + ' พาเลท → ยังไม่ได้รับ' : 'ออก ' + fmt(x.out) + ' → รับ ' + fmt(x.inn) + ' พาเลท';
-      return h('button', { type: 'button', class: 'st-tile st-' + u[0], 'aria-pressed': String(on),
-        onclick: function () {
-          state.filter = on ? 'all' : u[0]; state.limit = 150; renderResults(c);
-          var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' });
-        } },
-        h('span', { class: 'st-l' }, h('span', { class: 'st-mk', 'aria-hidden': 'true', text: MARK[u[0]] }), u[1]),
-        h('span', { class: 'st-n' }, fmt(v[0]), h('small', { text: ' ' + v[1] })),
-        h('span', { class: 'st-m', text: u[2] }),
-        u[0] === 'zero' ? null : h('span', { class: 'st-s', text: fmt(x.trips) + ' เที่ยว · ' + flow }));
-    })));
+      h('div', null, h('div', { class: 'tablewrap' }, t2), h('p', { class: 'pal-meta', text: 'ทั้งหมด = ทุกบันทึกในไฟล์รับภูมิภาค · จับคู่ได้ = เป็นของรถที่ปล่อยตั้งแต่วันที่เริ่มและเที่ยวนั้นมีพาเลท (นับเป็นขารับ) · ไม่นับ = รถอื่น/ปล่อยก่อนวันที่เริ่ม/ทะเบียนไม่ตรง/เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0' }))));
 
     // ---- รายการหลัก: ขาออก ↔ ขารับ รายคัน (ไม่แยกแท็บ) ----
     var pTrips = h('div', { id: 'panel-trips' });
@@ -2690,8 +2710,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('b', { text: (state.tf.region ? 'ภาค' + state.tf.region : 'ไม่ระบุภาค') + (state.tf.date ? ' · ' + core.fmtDate(state.tf.date) : '') }),
         h('button', { type: 'button', class: 'btn small', onclick: function () { state.tf = { on: false, region: '', date: '' }; state.limit = 150; renderResults(c); } }, 'ล้างตัวกรองนี้')));
     }
-    FILTERS.filter(function (f) { return f[0] === 'all' || f[0] === 'problem'; }).forEach(function (f) {
-      var cnt = tfRows(c).filter(f[2]).length;
+    FILTERS.filter(function (f) { return f[0] === 'all' || f[0] === 'problem' || f[0] === 'zero'; }).forEach(function (f) {
+      var cnt = f[0] === 'zero' ? c.res.rows.filter(f[2]).length : tfRows(c).filter(f[2]).length;
       fbox.appendChild(h('button', { type: 'button', class: 'fchip', 'aria-pressed': String(state.filter === f[0]),
         onclick: function () { state.filter = f[0]; state.limit = 150; renderResults(c); } }, f[1], h('span', { class: 'n', text: String(cnt) })));
     });
@@ -2734,6 +2754,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function tfRows(c) {
     var tf = state.tf;
     var base = !tf.on ? c.res.rows : c.res.rows.filter(function (g) { return (g.region || '') === tf.region && (!tf.date || g.date === tf.date); });
+    if (state.filter !== 'zero') base = base.filter(function (g) { return g.out.pal > 0; });      // เที่ยวที่ภาคจ่ายไม่ลงพาเลท (0) ไม่นับ — ดูได้ที่ปุ่ม “ไม่นับ”
     return state.day ? base.filter(function (g) { return g.date === state.day; }) : base;
   }
   function goTrips(c, opt) {      // จากหน้าสถานะ → ตารางรายเที่ยว พร้อมตัวกรอง
