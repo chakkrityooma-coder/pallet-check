@@ -2634,6 +2634,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var nPlates = Object.keys(platesSet).length, stuck = K.B + K.C + K.D;
     var go = function (id) { state.filter = (id === 'all' || state.filter === id) ? 'all' : id; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); };
     // ---- สรุปยอดรวม 4 ข้อ (ตัวเลขรวมตามที่ต้องการดูก่อน) ----
+    var orphBefore = 0, orphNoOut = 0;
+    (c.res.orphans || []).forEach(function (o) { if (o.reason === 'no_out') orphNoOut += o.pal; else orphBefore += o.pal; });
+    orphBefore = Math.round(orphBefore * 100) / 100; orphNoOut = Math.round(orphNoOut * 100) / 100;
     var allOut = t.outPal, allIn = Math.round((t.inPal + t.orphanPal) * 100) / 100, notCount = Math.round((allIn - K.inn) * 100) / 100, diffAll = Math.round((K.inn - allOut) * 100) / 100;
     var sgn4 = function (n) { return n > 0 ? '+' + fmt(n) : n < 0 ? '−' + fmt(-n) : '0'; };
     var notBack4 = K.C + K.D;
@@ -2643,7 +2646,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('span', { class: 'st-m', text: 'ภาคจ่ายปล่อยออกทั้งหมด' }), h('span', { class: 'st-s', text: fmt(rowsAll.length) + ' เที่ยว' })),
       h('button', { type: 'button', class: 'st-tile st-ret', 'aria-pressed': String(state.filter === 'returned'), onclick: function () { go('returned'); } },
         h('span', { class: 'st-l', text: 'รับเข้า' }), h('span', { class: 'st-n' }, fmt(K.inn), h('small', { text: ' พาเลท' })),
-        h('span', { class: 'st-m', text: 'รับภูมิภาค เฉพาะรถที่ชนกับภาคจ่าย' }), h('span', { class: 'st-s', text: 'ทั้งไฟล์ ' + fmt(allIn) + ' · ไม่นับ ' + fmt(notCount) })),
+        h('span', { class: 'st-m', text: 'รับภูมิภาค เฉพาะรถที่ปล่อยออกจากภาคจ่าย (ตามรหัสรถ)' }), h('span', { class: 'st-s', text: 'ทั้งไฟล์ ' + fmt(allIn) + ' · ไม่นับ ' + fmt(notCount) })),
       h('div', { class: 'st-tile st-net ' + (diffAll < 0 ? 'neg' : diffAll > 0 ? 'pos' : '') },
         h('span', { class: 'st-l', text: 'Diff (รับเข้า − ออก)' }), h('span', { class: 'st-n' }, sgn4(diffAll), h('small', { text: diffAll > 0 ? ' เกิน' : diffAll < 0 ? ' ขาด' : ' เท่ากัน' })),
         h('span', { class: 'st-m', text: '+ = เกิน · − = ขาด' }), h('span', { class: 'st-s', text: 'ขาด ' + fmt(K.B) + ' · เกิน ' + fmt(K.E) + ' · ค้าง ' + fmt(notBack4) })),
@@ -2651,8 +2654,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('span', { class: 'st-l', text: 'ค้างบนรถ (ยังไม่ได้รับ)' }), h('span', { class: 'st-n' }, fmt(notBack4), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'รถยังไม่กลับ: ระหว่างทาง ' + fmt(K.C) + ' + ไม่พบรับเข้า ' + fmt(K.D) }), h('span', { class: 'st-s', text: fmt(K.tC + K.tD) + ' เที่ยว' }))));
     box.appendChild(h('p', { class: 'pal-meta' },
-      'รับเข้าทั้งไฟล์รับภูมิภาค ' + fmt(allIn) + ' = ที่ชนกับภาคจ่าย ' + fmt(K.inn) + ' (นับ) + ไม่นับ ' + fmt(notCount) + ' (เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 ' + fmt(skipIn) + ' + ไม่อยู่ในภาคจ่ายหรือรับก่อนเที่ยวปล่อย ' + fmt(t.orphanPal) + ') พาเลท',
-      h('span', { class: 'sub', text: 'จับด้วยรหัสรถ: นับเฉพาะรถที่ปล่อยออกจากภาคจ่าย รถคันอื่นที่เข้ามาไม่นับ — กดดูรายการที่ไม่นับได้ที่ปุ่ม “ไม่นับ” และรายการรับเข้าที่ไม่พบเที่ยวปล่อยท้ายตาราง' })));
+      'รับเข้าทั้งไฟล์รับภูมิภาค ' + fmt(allIn) + ' = นับ ' + fmt(K.inn) + ' (ของรถที่ปล่อยออกจากภาคจ่ายตั้งแต่วันที่เริ่ม) + ไม่นับ ' + fmt(notCount) + ' พาเลท',
+      h('span', { class: 'sub', text: 'ที่ไม่นับ: ① เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 — ' + fmt(skipIn) + ' · ② รถที่ปล่อยก่อนวันที่เริ่มแล้วกลับมา (รับเข้าก่อนเที่ยวปล่อยแรกที่มีในข้อมูล) — ' + fmt(orphBefore) + ' · ③ รหัสรถที่ไม่มีในภาคจ่ายเลย — ' + fmt(orphNoOut) + ' พาเลท · จับด้วยรหัสรถ รถคันอื่นที่เข้ามาไม่นับ' })));
 
     var mainBox = box;       // ส่วนรายละเอียดการนับเก็บใน <details> (พับไว้ — หน้าแรกให้เห็นแค่ 4 ตัวเลข + รายการ)
     var dbox = h('details', { class: 'more', open: state.detOpen, ontoggle: function (e) { state.detOpen = e.target.open; } },
