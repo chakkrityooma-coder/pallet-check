@@ -2595,7 +2595,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var nPlates = Object.keys(platesSet).length, stuck = K.B + K.C + K.D;
     var go = function (id) { state.filter = (id === 'all' || state.filter === id) ? 'all' : id; state.limit = 150; renderResults(c); var tb = document.getElementById('tbl'); if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest' }); };
     // ---- สรุปยอดรวม 4 ข้อ (ตัวเลขรวมตามที่ต้องการดูก่อน) ----
-    var allOut = t.outPal, allIn = Math.round((t.inPal + t.orphanPal) * 100) / 100, diffAll = Math.round((allIn - allOut) * 100) / 100;
+    var allOut = t.outPal, allIn = Math.round((t.inPal + t.orphanPal) * 100) / 100, notCount = Math.round((allIn - K.inn) * 100) / 100, diffAll = Math.round((K.inn - allOut) * 100) / 100;
     var sgn4 = function (n) { return n > 0 ? '+' + fmt(n) : n < 0 ? '−' + fmt(-n) : '0'; };
     var notBack4 = K.C + K.D;
     box.appendChild(h('h3', { class: 'sum-h', text: 'สรุปยอดรวม' }));
@@ -2604,18 +2604,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('span', { class: 'st-l', text: '1  ยอดออก (ภาคจ่ายทั้งหมด)' }), h('span', { class: 'st-n' }, fmt(allOut), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'พาเลทที่ภาคจ่ายปล่อยออกรวมทุกภาค ทุกเที่ยว' }), h('span', { class: 'st-s', text: fmt(rowsAll.length) + ' เที่ยวที่ลงพาเลท (จากทั้งหมด ' + fmt(t.rows) + ' เที่ยว)' })),
       h('button', { type: 'button', class: 'st-tile st-ret', 'aria-pressed': String(state.filter === 'returned'), onclick: function () { go('returned'); } },
-        h('span', { class: 'st-l', text: '2  ยอดรับเข้า (รับภูมิภาคทั้งหมด)' }), h('span', { class: 'st-n' }, fmt(allIn), h('small', { text: ' พาเลท' })),
-        h('span', { class: 'st-m', text: 'พาเลทที่รับภูมิภาคบันทึกรับเข้า รวมทุกคัน' }), h('span', { class: 'st-s', text: 'ของรถที่ปล่อยออก ' + fmt(K.inn) + ' · ไม่ใช่ของรถที่ปล่อย/ไม่นับ ' + fmt(Math.round((allIn - K.inn) * 100) / 100) })),
+        h('span', { class: 'st-l', text: '2  ยอดรับเข้า (เฉพาะรถที่ชนกับภาคจ่าย)' }), h('span', { class: 'st-n' }, fmt(K.inn), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'พาเลทที่รับภูมิภาคบันทึกรับเข้า เฉพาะรถที่ปล่อยออกจากภาคจ่าย (รถที่ไม่อยู่ในภาคจ่ายไม่นับ)' }), h('span', { class: 'st-s', text: 'รับเข้าทั้งไฟล์ ' + fmt(allIn) + ' · ไม่นับ ' + fmt(notCount) })),
       h('div', { class: 'st-tile st-net' },
-        h('span', { class: 'st-l', text: '3  Diff (รับเข้า − ยอดออก)' }), h('span', { class: 'st-n' }, sgn4(diffAll), h('small', { text: diffAll > 0 ? ' พาเลท = เกิน' : diffAll < 0 ? ' พาเลท = ขาด' : ' พาเลท = เท่ากัน' })),
-        h('span', { class: 'st-m', text: 'ยอดรับเข้าทั้งหมด ลบ ยอดออกทั้งหมด (+ = เกิน, − = ขาด)' }),
-        h('span', { class: 'st-s', text: 'เฉพาะรถที่ปล่อยออก: ขาด ' + fmt(K.B) + ' · เกิน ' + fmt(K.E) + ' · ยังไม่กลับ ' + fmt(notBack4) + ' → รวม ' + sgn4(K.inn - K.out) })),
+        h('span', { class: 'st-l', text: '3  Diff (ยอดรับเข้า − ยอดออก)' }), h('span', { class: 'st-n' }, sgn4(diffAll), h('small', { text: diffAll > 0 ? ' พาเลท = เกิน' : diffAll < 0 ? ' พาเลท = ขาด' : ' พาเลท = เท่ากัน' })),
+        h('span', { class: 'st-m', text: 'ยอดรับเข้า (ที่ชนกับภาคจ่าย) ลบ ยอดออก (+ = เกิน, − = ขาด)' }),
+        h('span', { class: 'st-s', text: 'แยกเป็น ขาด ' + fmt(K.B) + ' · เกิน ' + fmt(K.E) + ' · ยังไม่กลับ ' + fmt(notBack4) + ' → รวม ' + sgn4(K.inn - K.out) })),
       h('button', { type: 'button', class: 'st-tile st-nor', 'aria-pressed': String(state.filter === 'notback'), onclick: function () { go('notback'); } },
         h('span', { class: 'st-l', text: '4  ยังไม่กลับมา' }), h('span', { class: 'st-n' }, fmt(notBack4), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'ปล่อยออกแล้วแต่รถยังไม่กลับ: ค้างบนรถระหว่างทาง ' + fmt(K.C) + ' + ไม่พบรับเข้า ' + fmt(K.D) }), h('span', { class: 'st-s', text: fmt(K.tC + K.tD) + ' เที่ยว' }))));
     box.appendChild(h('p', { class: 'pal-meta' },
-      'รับเข้า ' + fmt(allIn) + ' = ของรถที่ปล่อยออกตั้งแต่วันที่เริ่ม ' + fmt(K.inn) + ' + ของเที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 ' + fmt(skipIn) + ' + รถที่หาเที่ยวปล่อยออกไม่เจอ ' + fmt(t.orphanPal) + ' พาเลท',
-      h('span', { class: 'sub', text: 'การเทียบละเอียดข้างล่างนับเฉพาะรถที่ปล่อยออก (จับด้วยรหัสรถ) — รถคันอื่นที่เข้ามาไม่นับ' })));
+      'รับเข้าทั้งไฟล์รับภูมิภาค ' + fmt(allIn) + ' = ที่ชนกับภาคจ่าย ' + fmt(K.inn) + ' (นับ) + ไม่นับ ' + fmt(notCount) + ' (เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 ' + fmt(skipIn) + ' + ไม่อยู่ในภาคจ่ายหรือรับก่อนเที่ยวปล่อย ' + fmt(t.orphanPal) + ') พาเลท',
+      h('span', { class: 'sub', text: 'จับด้วยรหัสรถ: นับเฉพาะรถที่ปล่อยออกจากภาคจ่าย รถคันอื่นที่เข้ามาไม่นับ — กดดูรายการที่ไม่นับได้ที่ปุ่ม “ไม่นับ” และรายการรับเข้าที่ไม่พบเที่ยวปล่อยท้ายตาราง' })));
 
     box.appendChild(h('h3', { class: 'sum-h', text: 'เทียบเฉพาะรถที่ปล่อยออก (จับด้วยรหัสรถ) — กดการ์ดหรือแถวเพื่อดูรายเที่ยว' }));
     box.appendChild(h('p', { class: 'pal-meta' },
