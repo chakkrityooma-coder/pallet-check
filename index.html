@@ -2152,12 +2152,22 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   var LAYOUTS = [['auto', 'อ่านรูปแบบอัตโนมัติ'], ['outbound', 'ไฟล์ Data Outbound'], ['dispatch', 'ไฟล์สรุปคลังจ่าย (สนญ.)'], ['inbound', 'แบบฟอร์มรับสินค้า'], ['generic', 'ตารางทั่วไป']];
   var LAYOUT_NAME = { outbound: 'Data Outbound', dispatch: 'สรุปคลังจ่าย สนญ. (เวลาปล่อยรถ)', inbound: 'แบบฟอร์มรับสินค้า', generic: 'ตารางทั่วไป' };
 
+  /** กฎรวมทะเบียนที่พิมพ์ผิดซ้ำ ๆ: ทะเบียนขึ้นต้นด้วย from แล้วตามด้วยตัวเลข → เปลี่ยนเป็น to (ค่าเริ่มต้น TKC → KTC) */
+  var DEFAULT_RULES = [['TKC', 'KTC']];
+  function loadRules() {
+    try {
+      var v = JSON.parse(localStorage.getItem('pallet-check:rules') || 'null');
+      if (Array.isArray(v)) return v.filter(function (r) { return Array.isArray(r) && r.length === 2 && r[0] && r[1]; });
+    } catch (e) { /* ใช้ค่าเริ่มต้น */ }
+    return DEFAULT_RULES.map(function (r) { return r.slice(); });
+  }
+  function saveRules() { try { localStorage.setItem('pallet-check:rules', JSON.stringify(state.rules)); } catch (e) { /* ไม่เก็บถาวรก็ใช้งานต่อได้ */ } }
   var DEFAULT_FROM = '2026-11-01';     // 1 พ.ย. 69 — เริ่มตรวจตั้งแต่วันที่นี้เป็นต้นมา
   var state = {
     out: { files: [] }, in: { files: [] },
     tol: 0, grace: 2, sameDay: false, useHq: true, aliases: {},
     filter: 'all', q: '', sort: { key: 'status', dir: 1 }, open: {}, limit: 150,
-    day: '', tab: 'status', moreOpen: false, tf: { on: false, region: '', date: '' }, bl: {}, fx: { group: 'all', sev: 'all', q: '', limit: 40, hideDone: false }, done: {},
+    rules: loadRules(), day: '', tab: 'status', moreOpen: false, tf: { on: false, region: '', date: '' }, bl: {}, fx: { group: 'all', sev: 'all', q: '', limit: 40, hideDone: false }, done: {},
     from: (function () { var v = ''; try { v = localStorage.getItem('pallet-check:from') || ''; } catch (e) { /* ใช้ค่าเริ่มต้น */ } return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : DEFAULT_FROM; })(),   // ดึง/ตรวจตั้งแต่วันที่นี้เป็นต้นมา (ค.ศ.)
     inputsOpen: null,          // null = อัตโนมัติ (มีผลแล้วพับเก็บ ยังไม่มีผลให้เปิด) · true/false = ผู้ใช้เลือกเอง
     driveNote: '', driveTime: ''
@@ -2305,7 +2315,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function compute() {
     var o = records('out'), i = records('in'), rel = state.useHq ? releaseRecords() : [];
     var m = core.mergeDispatch(o, rel);       // ใช้ทั้งสองไฟล์: พาเลทจาก Data Outbound + เวลาปล่อยรถจากภาคจ่าย สนญ.
-    var res = (o.length && i.length) ? core.reconcile(m.recs, i, { tol: state.tol, grace: state.grace, sameDay: state.sameDay, aliases: state.aliases }) : null;
+    var ruleAliases = {};      // ทะเบียนที่ตรงกฎ (เช่น TKC415 → KTC415) ใช้กับทั้งฝั่งปล่อยออกและรับเข้า · ที่ผู้ใช้กดรวมเองมีผลเหนือกว่า
+    state.rules.forEach(function (rule) {
+      [m.recs, i].forEach(function (list) {
+        list.forEach(function (r) {
+          [r.p, r.t].forEach(function (pl) {
+            if (pl && pl.indexOf(rule[0]) === 0 && pl.length > rule[0].length && /\d/.test(pl.slice(rule[0].length))) ruleAliases[pl] = rule[1] + pl.slice(rule[0].length);
+          });
+        });
+      });
+    });
+    var res = (o.length && i.length) ? core.reconcile(m.recs, i, { tol: state.tol, grace: state.grace, sameDay: state.sameDay, aliases: Object.assign({}, ruleAliases, state.aliases) }) : null;
     var out = { res: res, merge: m.info, ro: core.dateRange(o), ri: core.dateRange(i), nOut: o.length, nIn: i.length, nRel: releaseRecords().length };
     var ex = res ? fixContext(m.info, o, i) : null;
     out.fixes = res ? core.buildFixes(res, ex) : [];
@@ -2449,8 +2469,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('#options').hidden = !(state.out.files.length && state.in.files.length);
     $('#opt-hq').hidden = !releaseRecords().length;     // แสดงเฉพาะเมื่อผู้ใช้โหลดไฟล์สรุปคลังจ่ายเอง (ดึงจาก Drive ไม่ใช้ไฟล์นี้)
     var keys = Object.keys(state.aliases);
-    $('#alias-box').hidden = !keys.length;
+    $('#alias-box').hidden = !(keys.length || state.rules.length);
     var box = clear($('#aliases'));
+    state.rules.forEach(function (rule, ri) {
+      box.appendChild(h('span', { class: 'alias' }, 'รวมอัตโนมัติ: ' + rule[0] + 'xxx → ' + rule[1] + 'xxx',
+        h('button', { type: 'button', class: 'x', 'aria-label': 'ยกเลิกกฎรวม ' + rule[0] + ' เป็น ' + rule[1], onclick: function () { state.rules.splice(ri, 1); saveRules(); renderDerived(); } }, '×')));
+    });
     keys.forEach(function (k) {
       box.appendChild(h('span', { class: 'alias' }, k + ' → ' + state.aliases[k],
         h('button', { type: 'button', class: 'x', 'aria-label': 'ยกเลิกการรวม ' + k, onclick: function () { delete state.aliases[k]; renderDerived(); } }, '×')));
@@ -2521,6 +2545,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         }))));
     }
     return kids;
+  }
+  /** บรรทัดบอกว่ารวมทะเบียนอะไรให้บ้าง (จากกฎอัตโนมัติ/ที่ผู้ใช้กดรวม) */
+  function aliasNote(c) {
+    var pairs = {}, n = 0;
+    (c.res.aliased || []).forEach(function (a) { var k = a.from + '→' + a.to; if (!pairs[k]) { pairs[k] = 0; } pairs[k]++; n++; });
+    var keys = Object.keys(pairs);
+    if (!keys.length) return null;
+    return h('span', { class: 'sub', text: 'รวมทะเบียนให้แล้ว ' + fmt(n) + ' รายการ: ' + keys.slice(0, 8).join(', ') + (keys.length > 8 ? ' …' : '') });
   }
   var MARK = { ok: '✓', short: '▼', over: '▲', no_return: '✗', pending: '…', zero: '–' };
   var INCLS = { ok: 'd-zero', short: 'd-neg', over: 'd-pos' };
@@ -2621,7 +2653,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     box.appendChild(h('p', { class: 'pal-meta' },
       'ปล่อยออก ' + fmt(K.out) + ' = ถึงคลังแล้ว ' + fmt(K.A) + ' + ค้างอยู่ ' + fmt(stuck) + ' พาเลท',
       h('span', { class: 'sub', text: 'นับเฉพาะรถที่ปล่อยตั้งแต่วันที่เริ่ม แล้วตามหาการกลับมาของ “รถคันนั้น” เท่านั้น · ไม่นับ ' + fmt(skipRows.length) + ' เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0' + (skipIn ? ' (และรับเข้า ' + fmt(skipIn) + ' พาเลทที่ผูกกับเที่ยวเหล่านั้น)' : '') }),
-      t.orphans ? h('span', { class: 'sub', text: 'รับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) เป็นรถที่หาเที่ยวปล่อยออกไม่เจอ — ไม่นับ' }) : null));
+      t.orphans ? h('span', { class: 'sub', text: 'รับเข้า ' + fmt(t.orphans) + ' รายการ (' + fmt(t.orphanPal) + ' พาเลท) เป็นรถที่หาเที่ยวปล่อยออกไม่เจอ — ไม่นับ' }) : null,
+      aliasNote(c)));
 
     // ---- ④ พาเลทอยู่ที่ไหน ----
     var WH = [
@@ -3227,6 +3260,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
   $('#btn-reset').addEventListener('click', function () {
     state.out.files = []; state.in.files = []; state.aliases = {}; state.open = {}; state.filter = 'all'; state.q = '';
+    state.rules = DEFAULT_RULES.map(function (r) { return r.slice(); }); try { localStorage.removeItem('pallet-check:rules'); } catch (e) { /* ไม่เป็นไร */ }
     state.tf = { on: false, region: '', date: '' }; state.bl = {}; state.day = ''; state.tab = 'status'; state.moreOpen = false; state.inputsOpen = null; state.driveNote = ''; state.driveBad = 0;
     state.tol = 0; state.grace = 2; state.sameDay = false; state.useHq = true;
     state.from = DEFAULT_FROM; fromEl.value = DEFAULT_FROM; try { localStorage.removeItem('pallet-check:from'); } catch (e) { /* ไม่เป็นไร */ }
