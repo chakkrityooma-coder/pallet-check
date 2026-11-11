@@ -299,14 +299,18 @@ table.dtab .c-muted { color:var(--muted); }
 @media (max-width: 1100px) { .sum5 { grid-template-columns:repeat(3,1fr); } }
 @media (max-width: 760px) { .sum5 { grid-template-columns:repeat(2,1fr); } }
 @media (max-width: 480px) { .sum5 { grid-template-columns:1fr; } }
-.sum5.sum4 { grid-template-columns:repeat(4,1fr); }
-@media (max-width: 1100px) { .sum5.sum4 { grid-template-columns:repeat(2,1fr); } }
+.sum5.sum4 { grid-template-columns:repeat(5,1fr); }
+@media (max-width: 1250px) { .sum5.sum4 { grid-template-columns:repeat(3,1fr); } }
+@media (max-width: 760px) { .sum5.sum4 { grid-template-columns:repeat(2,1fr); } }
 @media (max-width: 520px) { .sum5.sum4 { grid-template-columns:1fr; } }
 .sum5.sum4 .st-n { font-size:2.25rem; }
 .glance { gap:12px; margin:6px 0 10px; }
 .glance .st-tile { min-height:0; padding:14px 16px; }
 .glance .st-l { font-size:1rem; font-weight:700; }
-.glance .st-n { font-size:3rem; line-height:1.05; }
+.glance .st-n { font-size:2.5rem; line-height:1.05; }
+.glance .st-warn { background:var(--short-bg); color:var(--short); cursor:default; }
+.glance .st-links { display:flex; flex-direction:column; gap:2px; align-items:flex-start; }
+.glance .st-links .linklike { font-size:.8125rem; font-weight:700; text-align:left; color:inherit; }
 .glance .st-n small { font-size:1rem; }
 .glance .st-m { font-size:.8125rem; } .glance .st-s { margin-top:4px; font-size:.8125rem; }
 .glance .st-net.neg .st-n { color:var(--short); } .glance .st-net.pos .st-n { color:var(--over); }
@@ -2648,6 +2652,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       h('button', { type: 'button', class: 'st-tile st-ret', 'aria-pressed': String(state.filter === 'returned'), onclick: function () { go('returned'); } },
         h('span', { class: 'st-l', text: 'รับเข้า' }), h('span', { class: 'st-n' }, fmt(K.inn), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'รับภูมิภาค เฉพาะรถที่ปล่อยออกจากภาคจ่าย (ตามรหัสรถ)' }), h('span', { class: 'st-s', text: 'ทั้งไฟล์ ' + fmt(allIn) + ' · ไม่นับ ' + fmt(notCount) })),
+      h('div', { class: 'st-tile st-warn', role: 'group', 'aria-label': 'รับเข้าที่ไม่ตรงกับรหัสปล่อยรถ' },
+        h('span', { class: 'st-l', text: 'รับเข้าไม่ตรงรหัสปล่อยรถ' }), h('span', { class: 'st-n' }, fmt(notCount), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'รับภูมิภาคที่ไม่ใช่ของรถที่ปล่อยออก (ไม่นับ) — กดดูรายการ' }),
+        h('span', { class: 'st-s st-links' },
+          h('button', { type: 'button', class: 'linklike', onclick: function () { go('zero'); } }, 'ภาคจ่ายลงพาเลท 0: ' + fmt(skipIn)),
+          h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, 'ปล่อยก่อน 1 พ.ย./ทะเบียนไม่ตรง: ' + fmt(Math.round((orphBefore + orphNoOut) * 100) / 100)))),
       h('div', { class: 'st-tile st-net ' + (diffAll < 0 ? 'neg' : diffAll > 0 ? 'pos' : '') },
         h('span', { class: 'st-l', text: 'Diff (รับเข้า − ออก)' }), h('span', { class: 'st-n' }, sgn4(diffAll), h('small', { text: diffAll > 0 ? ' เกิน' : diffAll < 0 ? ' ขาด' : ' เท่ากัน' })),
         h('span', { class: 'st-m', text: '+ = เกิน · − = ขาด' }), h('span', { class: 'st-s', text: 'ขาด ' + fmt(K.B) + ' · เกิน ' + fmt(K.E) + ' · ค้าง ' + fmt(notBack4) })),
