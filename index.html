@@ -2637,6 +2637,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var orphBefore = 0, orphNoOut = 0;
     (c.res.orphans || []).forEach(function (o) { if (o.reason === 'no_out') orphNoOut += o.pal; else orphBefore += o.pal; });
     orphBefore = Math.round(orphBefore * 100) / 100; orphNoOut = Math.round(orphNoOut * 100) / 100;
+    var openOrphans = function () { var d = document.getElementById('orphans-box'); if (d) { d.open = true; if (d.scrollIntoView) d.scrollIntoView({ block: 'center' }); } };
     var allOut = t.outPal, allIn = Math.round((t.inPal + t.orphanPal) * 100) / 100, notCount = Math.round((allIn - K.inn) * 100) / 100, diffAll = Math.round((K.inn - allOut) * 100) / 100;
     var sgn4 = function (n) { return n > 0 ? '+' + fmt(n) : n < 0 ? '−' + fmt(-n) : '0'; };
     var notBack4 = K.C + K.D;
@@ -2655,7 +2656,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('span', { class: 'st-m', text: 'รถยังไม่กลับ: ระหว่างทาง ' + fmt(K.C) + ' + ไม่พบรับเข้า ' + fmt(K.D) }), h('span', { class: 'st-s', text: fmt(K.tC + K.tD) + ' เที่ยว' }))));
     box.appendChild(h('p', { class: 'pal-meta' },
       'รับเข้าทั้งไฟล์รับภูมิภาค ' + fmt(allIn) + ' = นับ ' + fmt(K.inn) + ' (ของรถที่ปล่อยออกจากภาคจ่ายตั้งแต่วันที่เริ่ม) + ไม่นับ ' + fmt(notCount) + ' พาเลท',
-      h('span', { class: 'sub', text: 'ที่ไม่นับ: ① เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 — ' + fmt(skipIn) + ' · ② รถที่ปล่อยก่อนวันที่เริ่มแล้วกลับมา (รับเข้าก่อนเที่ยวปล่อยแรกที่มีในข้อมูล) — ' + fmt(orphBefore) + ' · ③ รหัสรถที่ไม่มีในภาคจ่ายเลย — ' + fmt(orphNoOut) + ' พาเลท · จับด้วยรหัสรถ รถคันอื่นที่เข้ามาไม่นับ' })));
+      h('span', { class: 'sub' }, 'ที่ไม่นับ (กดเพื่อดูรายการ): ',
+        h('button', { type: 'button', class: 'linklike', onclick: function () { go('zero'); } }, '① เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 — ' + fmt(skipIn)), ' · ',
+        h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, '② รถที่ปล่อยก่อนวันที่เริ่มแล้วกลับมา (รับเข้าก่อนเที่ยวปล่อยแรกที่มีในข้อมูล) — ' + fmt(orphBefore)), ' · ',
+        h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, '③ รหัสรถที่ไม่มีในภาคจ่ายเลย — ' + fmt(orphNoOut)), ' พาเลท · จับด้วยรหัสรถ รถคันอื่นที่เข้ามาไม่นับ')));
 
     var mainBox = box;       // ส่วนรายละเอียดการนับเก็บใน <details> (พับไว้ — หน้าแรกให้เห็นแค่ 4 ตัวเลข + รายการ)
     var dbox = h('details', { class: 'more', open: state.detOpen, ontoggle: function (e) { state.detOpen = e.target.open; } },
@@ -3065,7 +3069,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       return h('tr', null, h('td', { class: 'plate', text: o.plate }), h('td', { text: core.fmtDate(o.d) }), h('td', { text: core.fmtTime(o.tm) || '–' }),
         h('td', { class: 'r', text: fmt(o.pal) }), h('td', { text: o.lb || '–' }), h('td', { class: 'notes' }, reason(o), suggestBox(o.suggest)));
     }));
-    return h('details', { class: 'orphans' },
+    return h('details', { class: 'orphans', id: 'orphans-box' },
       h('summary', { text: 'รับเข้าที่ไม่พบเที่ยวปล่อยออกก่อนหน้า (' + fmt(os.length) + ' รายการ · ' + fmt(c.res.totals.orphanPal) + ' พาเลท) — ไม่นับในผลตรวจข้างบน' }),
       h('p', { class: 'hint', text: 'มักเป็นรถที่กลับจากเที่ยวซึ่งปล่อยออกก่อนช่วงข้อมูลที่เลือก หรือทะเบียนที่พิมพ์ไม่ตรงกับฝั่งปล่อยออก' }),
       h('div', { class: 'orphan-scroll' }, h('table', null,
