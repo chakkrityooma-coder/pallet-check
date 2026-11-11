@@ -309,6 +309,7 @@ table.dtab .c-muted { color:var(--muted); }
 .glance .st-l { font-size:1rem; font-weight:700; }
 .glance .st-n { font-size:2.25rem; line-height:1.05; }
 .glance .st-tile { padding:12px 13px; }
+.glance .st-n small.pre { font-size:1.25rem; font-weight:800; margin-right:2px; }
 .glance .st-sumin { background:var(--ok-bg); color:var(--ok); border:2px solid currentColor !important; cursor:default; }
 .glance .st-warn { background:var(--short-bg); color:var(--short); cursor:default; }
 .glance .st-links { display:flex; flex-direction:column; gap:2px; align-items:flex-start; }
@@ -2663,15 +2664,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       h('div', { class: 'st-tile st-sumin' },
         h('span', { class: 'st-l', text: '= รวมรับเข้า' }), h('span', { class: 'st-n' }, fmt(allIn), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'รับภูมิภาคทั้งไฟล์' }), h('span', { class: 'st-s', text: fmt(K.inn) + ' + ' + fmt(notCount) + ' = ' + fmt(allIn) })),
-      h('div', { class: 'st-tile st-net ' + (diffAll > 0 ? 'neg' : diffAll < 0 ? 'pos' : '') },
-        h('span', { class: 'st-l', text: 'Diff (ปล่อยออก − รวมรับเข้า)' }), h('span', { class: 'st-n' }, sgn4(diffAll), h('small', { text: ' พาเลท' })),
-        h('span', { class: 'st-m', text: diffAll > 0 ? 'รับเข้าน้อยกว่าที่ปล่อยออก ' + fmt(diffAll) + ' พาเลท (ขาด)' : diffAll < 0 ? 'รับเข้ามากกว่าที่ปล่อยออก ' + fmt(-diffAll) + ' พาเลท (เกิน)' : 'รับเข้าเท่ากับที่ปล่อยออก' }),
-        h('span', { class: 'st-s', text: fmt(allOut) + ' − ' + fmt(allIn) + ' = ' + sgn4(diffAll) })),
+      h('div', { class: 'st-tile st-net ' + (diffAll > 0 ? 'neg' : diffAll < 0 ? 'pos' : '') },      // diffAll = ปล่อยออก − รวมรับเข้า: ติดลบ = รับเข้ามากกว่า (เกิน)
+        h('span', { class: 'st-l', text: 'Diff (ปล่อยออก เทียบ รวมรับเข้า)' }),
+        h('span', { class: 'st-n' }, h('small', { class: 'pre', text: diffAll < 0 ? 'เกิน ' : diffAll > 0 ? 'ขาด ' : 'เท่ากัน ' }), fmt(Math.abs(diffAll)), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: diffAll < 0 ? 'รับกลับเข้ามากกว่าที่ปล่อยออก' : diffAll > 0 ? 'รับกลับเข้าน้อยกว่าที่ปล่อยออก' : 'รับกลับเข้าเท่ากับที่ปล่อยออก' }),
+        h('span', { class: 'st-s', text: 'ปล่อยออก ' + fmt(allOut) + ' · รับเข้า ' + fmt(allIn) + (diffAll < 0 ? ' → เกิน ' : diffAll > 0 ? ' → ขาด ' : ' → ต่าง ') + fmt(Math.abs(diffAll)) })),
       h('button', { type: 'button', class: 'st-tile st-nor', 'aria-pressed': String(state.filter === 'notback'), onclick: function () { go('notback'); } },
         h('span', { class: 'st-l', text: 'ค้างบนรถ (ยังไม่ได้รับ)' }), h('span', { class: 'st-n' }, fmt(notBack4), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'รถยังไม่กลับ: ระหว่างทาง ' + fmt(K.C) + ' + ไม่พบรับเข้า ' + fmt(K.D) }), h('span', { class: 'st-s', text: fmt(K.tC + K.tD) + ' เที่ยว · แยกต่างหาก ไม่รวมใน Diff' }))));
     box.appendChild(h('p', { class: 'pal-meta' },
-      'วิธีคิด: ปล่อยออก ' + fmt(allOut) + ' − (รับเข้าตรงรหัส ' + fmt(K.inn) + ' + ไม่ตรงรหัส ' + fmt(notCount) + ' = ' + fmt(allIn) + ') = Diff ' + sgn4(diffAll) + ' พาเลท · ค้างบนรถ ' + fmt(notBack4) + ' แยกต่างหาก',
+      'วิธีคิด: ปล่อยออก ' + fmt(allOut) + ' เทียบกับ (รับเข้าตรงรหัส ' + fmt(K.inn) + ' + ไม่ตรงรหัส ' + fmt(notCount) + ' = ' + fmt(allIn) + ') → ' + (diffAll < 0 ? 'เกิน ' : diffAll > 0 ? 'ขาด ' : 'ต่าง ') + fmt(Math.abs(diffAll)) + ' พาเลท · ค้างบนรถ ' + fmt(notBack4) + ' แยกต่างหาก',
       h('span', { class: 'sub' }, 'รับเข้าไม่ตรงรหัสปล่อยรถ ' + fmt(notCount) + ' มาจาก (กดเพื่อดูรายการ): ',
         h('button', { type: 'button', class: 'linklike', onclick: function () { go('zero'); } }, '① เที่ยวที่ภาคจ่ายลงพาเลทเป็น 0 — ' + fmt(skipIn)), ' · ',
         h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, '② รถที่ปล่อยก่อนวันที่เริ่มแล้วกลับมา (รับเข้าก่อนเที่ยวปล่อยแรกที่มีในข้อมูล) — ' + fmt(orphBefore)), ' · ',
