@@ -1727,7 +1727,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function G() { return typeof globalThis !== 'undefined' ? globalThis : root; }
   /** "#k=KEY&n=ID&..." → { key, ids: { 'out-north': ID, ... } } หรือ null */
   function parseCfg(text) {
-    var s = String(text || '').replace(/^#/, '');
+    var s = String(text || '').replace(/^[#?]/, '');
     if (!/(^|&)k=/.test(s)) return null;
     var p = {};
     s.split('&').forEach(function (kv) {
@@ -1744,10 +1744,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function webConfig() {
     var g = G(), loc = g.location;
     if (!loc || !/^https?:$/.test(loc.protocol)) return null;
-    var cfg = parseCfg(loc.hash);
+    // ค่าตั้งต้นอยู่หลัง # (ปกติ) หรือหลัง ? (สำรอง — บางที่ที่เปิดลิงก์ต่อให้ เช่น หน้าอื่นที่พาออกนอกเว็บ จะตัดส่วนหลัง # ทิ้ง)
+    var cfg = parseCfg(loc.hash) || parseCfg(loc.search);
     if (cfg) {
       try { g.localStorage.setItem(CFG_STORE, JSON.stringify(cfg)); } catch (e) { /* เก็บไม่ได้ก็ใช้รอบนี้ได้ */ }
-      try { g.history.replaceState(null, '', loc.pathname + (loc.search || '')); } catch (e2) { /* ไม่เป็นไร */ }
+      try { g.history.replaceState(null, '', loc.pathname); } catch (e2) { /* ไม่เป็นไร */ }
       return cfg;
     }
     try { cfg = JSON.parse(g.localStorage.getItem(CFG_STORE) || 'null'); } catch (e3) { cfg = null; }
@@ -1755,7 +1756,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   /** วางลิงก์ส่วนตัว (ทั้งลิงก์ หรือเฉพาะส่วนหลัง #) → เก็บค่าตั้งต้นในเครื่อง · คืน true เมื่อใช้ได้ */
   function saveCfg(text) {
-    var t = String(text || '').trim(), i = t.indexOf('#');
+    var t = String(text || '').trim(), i = t.search(/[#?]k=/);
     var cfg = parseCfg(i >= 0 ? t.slice(i) : t);
     if (!cfg) return false;
     try { G().localStorage.setItem(CFG_STORE, JSON.stringify(cfg)); } catch (e) { return false; }
