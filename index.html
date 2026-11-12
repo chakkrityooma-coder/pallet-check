@@ -80,6 +80,9 @@ main.has-res .lead { display:none; }
 
 /* ---------- ดึงจาก Google Drive ---------- */
 .card.drive { margin:0 0 16px; }
+.drive-setup { border-color:var(--short); } .drive-setup h2 { margin:0 0 4px; font-size:1.0625rem; color:var(--short); }
+.setup-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.setup-row input { flex:1 1 320px; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:inherit; }
 .drive-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px 16px; flex-wrap:wrap; }
 .drive-head h2 { margin:0 0 2px; font-size:1.0625rem; }
 .drive-head .hint { margin:0; }
@@ -446,6 +449,16 @@ table.ck th, table.ck td { font-size:.875rem; }
   </section>
 
   <div id="inputs">
+  <section class="card drive drive-setup" id="drive-setup" aria-labelledby="h-setup" hidden>
+    <h2 id="h-setup">เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive</h2>
+    <p class="hint">ค่าตั้งต้น (key และโฟลเดอร์) เก็บไว้ในเบราว์เซอร์แต่ละเครื่อง — ถ้าเปลี่ยนเครื่อง/เบราว์เซอร์ เปิดแบบไม่ระบุตัวตน หรือล้างข้อมูลเว็บ ต้องตั้งใหม่หนึ่งครั้ง: เปิด “ลิงก์ส่วนตัว” ของคุณ หรือวางลิงก์นั้นในช่องนี้แล้วกดบันทึก</p>
+    <div class="setup-row">
+      <input type="text" id="setup-link" autocomplete="off" spellcheck="false" aria-label="วางลิงก์ส่วนตัว" placeholder="วางลิงก์ส่วนตัว (…/pallet-check/#k=…)">
+      <button type="button" class="btn primary" id="btn-setup">บันทึกและดึงข้อมูล</button>
+    </div>
+    <p class="drive-msg" id="setup-msg" role="status" aria-live="polite"></p>
+  </section>
+
   <section class="card drive" id="drive-box" aria-labelledby="h-drive" hidden>
     <div class="drive-head">
       <div>
@@ -1740,6 +1753,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     try { cfg = JSON.parse(g.localStorage.getItem(CFG_STORE) || 'null'); } catch (e3) { cfg = null; }
     return cfg && cfg.key && cfg.ids && Object.keys(cfg.ids).length ? cfg : null;
   }
+  /** วางลิงก์ส่วนตัว (ทั้งลิงก์ หรือเฉพาะส่วนหลัง #) → เก็บค่าตั้งต้นในเครื่อง · คืน true เมื่อใช้ได้ */
+  function saveCfg(text) {
+    var t = String(text || '').trim(), i = t.indexOf('#');
+    var cfg = parseCfg(i >= 0 ? t.slice(i) : t);
+    if (!cfg) return false;
+    try { G().localStorage.setItem(CFG_STORE, JSON.stringify(cfg)); } catch (e) { return false; }
+    return true;
+  }
+  /** true = เปิดเป็นเว็บทั่วไป (http/https) ที่ดึง Drive ได้ถ้ามีค่าตั้งต้น — ใช้ตัดสินว่าจะชวนให้ตั้งค่าหรือไม่ */
+  function webCapable() { var loc = G().location; return !!(loc && /^https?:$/.test(loc.protocol)); }
   function resetWeb() { try { G().localStorage.removeItem(CFG_STORE); } catch (e) { /* ไม่มีที่เก็บ */ } }
 
   // ---------- เลือกไฟล์ "ตั้งแต่วันที่ ... เป็นต้นมา" ----------
@@ -1968,7 +1991,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, pickFiles: pickFiles, fileMonth: fileMonth,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -3274,7 +3297,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   if (window.PalletDrive) {
     window.PalletDrive.available().then(function (ok) {
-      if (!ok) return;                       // เปิดนอก claude.ai → ไม่แสดงส่วนนี้ ใช้เลือกไฟล์เองตามเดิม
+      if (!ok) {                             // ไม่มีตัวเชื่อม/ค่าตั้งต้น → เลือกไฟล์เองได้ตามเดิม
+        if (window.PalletDrive.webCapable && window.PalletDrive.webCapable()) {      // เว็บทั่วไปที่ยังไม่มีค่าตั้งต้นในเบราว์เซอร์นี้ → บอกสาเหตุและให้ตั้งค่า
+          state.needSetup = true; $('#drive-setup').hidden = false;
+          $('#btn-setup').addEventListener('click', function () {
+            if (window.PalletDrive.saveCfg($('#setup-link').value)) location.reload();
+            else $('#setup-msg').textContent = 'ลิงก์นี้ใช้ไม่ได้ — ต้องเป็นลิงก์ส่วนตัวที่มี #k=… และรหัสโฟลเดอร์ (n, c, e, s, b, i)';
+          });
+          syncInputs();
+        }
+        return;
+      }
       $('#drive-box').hidden = false; $('#btn-drive').hidden = false;
       $('#btn-drive').addEventListener('click', pullDrive);
       if (window.PalletDrive.mode === 'web') {       // เว็บทั่วไป: ค่าตั้งต้นมาจากลิงก์ส่วนตัวและเก็บในเครื่องนี้
@@ -3297,6 +3330,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var sum = $('#data-sum'); clear(sum);
     var nOut = state.out.files.length, nIn = state.in.files.length, sheets = selectedSheets('out').length + selectedSheets('in').length;
     if (driveBusy) { sum.textContent = 'กำลังดึงไฟล์ล่าสุดจาก Google Drive…'; return; }
+    if (!nOut && !nIn && state.needSetup) { sum.textContent = 'ยังไม่ได้ดึงข้อมูล — เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive (ดูกล่องด้านล่าง) หรือเลือกไฟล์เอง'; return; }
     if (!nOut && !nIn) { sum.textContent = window.PalletDrive && !$('#btn-drive').hidden ? 'ยังไม่มีข้อมูล — กด “ดึงใหม่จาก Drive” หรือเลือกไฟล์เอง' : 'ยังไม่มีข้อมูล — เลือกไฟล์ภาคจ่ายทั้ง 5 ภาคและไฟล์รับภูมิภาค หรือกด “ลองใช้ข้อมูลตัวอย่าง”'; return; }
     sum.appendChild(h('b', { text: 'ข้อมูลที่ใช้: ' }));
     sum.appendChild(document.createTextNode('ขาออก ' + nOut + ' ไฟล์ · ขารับเข้า ' + nIn + ' ไฟล์ · ' + sheets + ' ชีต' +
