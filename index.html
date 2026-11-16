@@ -82,6 +82,7 @@ main.has-res .lead { display:none; }
 .card.drive { margin:0 0 16px; }
 .drive-setup { border-color:var(--short); } .drive-setup h2 { margin:0 0 4px; font-size:1.0625rem; color:var(--short); }
 .setup-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.pin-show { display:inline-flex; align-items:center; gap:6px; font-size:.875rem; color:var(--muted); }
 #setup-pin-input { flex:0 1 200px; font-size:1.25rem; letter-spacing:.2em; text-align:center; }
 .drive-setup details.paste { margin-top:12px; }
 .setup-row input { flex:1 1 320px; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:inherit; }
@@ -456,8 +457,9 @@ table.ck th, table.ck td { font-size:.875rem; }
     <div id="setup-pin" hidden>
       <p class="hint">ใส่ PIN ครั้งเดียวต่อเครื่อง/เบราว์เซอร์ — หลังจากนั้นเปิดหน้านี้แล้วจะดึงข้อมูลเองทุกครั้ง (ขอ PIN ได้จากหัวหน้า)</p>
       <form class="setup-row" id="pin-form" autocomplete="off">
-        <input type="text" id="setup-pin-input" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="PIN" placeholder="PIN">
+        <input type="password" id="setup-pin-input" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="PIN" placeholder="PIN">
         <button type="submit" class="btn primary" id="btn-pin">ปลดล็อกและดึงข้อมูล</button>
+        <label class="pin-show"><input type="checkbox" id="pin-show"> แสดง PIN</label>
       </form>
     </div>
     <details class="paste" id="setup-linkbox" open>
@@ -3353,6 +3355,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               });
             });
             $('#setup-pin-input').addEventListener('input', function (e) { var v = window.PalletDrive.normPin(e.target.value); if (v !== e.target.value) e.target.value = v; });   // แป้นไทย/เลขไทย → ตัวเลข
+            $('#pin-show').addEventListener('change', function (e) { $('#setup-pin-input').type = e.target.checked ? 'text' : 'password'; });
             $('#setup-ver').textContent = 'รหัสรุ่นของหน้านี้: ' + window.PalletDrive.lockId();
             $('#setup-pin-input').focus();
           } else {
