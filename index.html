@@ -82,6 +82,8 @@ main.has-res .lead { display:none; }
 .card.drive { margin:0 0 16px; }
 .drive-setup { border-color:var(--short); } .drive-setup h2 { margin:0 0 4px; font-size:1.0625rem; color:var(--short); }
 .setup-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+#setup-pin-input { flex:0 1 200px; font-size:1.25rem; letter-spacing:.2em; text-align:center; }
+.drive-setup details.paste { margin-top:12px; }
 .setup-row input { flex:1 1 320px; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:inherit; }
 .drive-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px 16px; flex-wrap:wrap; }
 .drive-head h2 { margin:0 0 2px; font-size:1.0625rem; }
@@ -450,12 +452,22 @@ table.ck th, table.ck td { font-size:.875rem; }
 
   <div id="inputs">
   <section class="card drive drive-setup" id="drive-setup" aria-labelledby="h-setup" hidden>
-    <h2 id="h-setup">เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive</h2>
-    <p class="hint">ค่าตั้งต้น (key และโฟลเดอร์) เก็บไว้ในเบราว์เซอร์แต่ละเครื่อง — ถ้าเปลี่ยนเครื่อง/เบราว์เซอร์ เปิดแบบไม่ระบุตัวตน หรือล้างข้อมูลเว็บ ต้องตั้งใหม่หนึ่งครั้ง: เปิด “ลิงก์ส่วนตัว” ของคุณ หรือวางลิงก์นั้นในช่องนี้แล้วกดบันทึก</p>
-    <div class="setup-row">
-      <input type="text" id="setup-link" autocomplete="off" spellcheck="false" aria-label="วางลิงก์ส่วนตัว" placeholder="วางลิงก์ส่วนตัว (…/pallet-check/#k=…)">
-      <button type="button" class="btn primary" id="btn-setup">บันทึกและดึงข้อมูล</button>
+    <h2 id="h-setup">ใส่ PIN เพื่อดึงข้อมูลจาก Google Drive</h2>
+    <div id="setup-pin" hidden>
+      <p class="hint">ใส่ PIN ครั้งเดียวต่อเครื่อง/เบราว์เซอร์ — หลังจากนั้นเปิดหน้านี้แล้วจะดึงข้อมูลเองทุกครั้ง (ขอ PIN ได้จากหัวหน้า)</p>
+      <form class="setup-row" id="pin-form" autocomplete="off">
+        <input type="password" id="setup-pin-input" inputmode="numeric" autocomplete="off" aria-label="PIN" placeholder="PIN">
+        <button type="submit" class="btn primary" id="btn-pin">ปลดล็อกและดึงข้อมูล</button>
+      </form>
     </div>
+    <details class="paste" id="setup-linkbox" open>
+      <summary>หรือวางลิงก์ส่วนตัว</summary>
+      <p class="hint">ถ้ามี “ลิงก์ส่วนตัว” (…/pallet-check/?k=…) วางในช่องนี้แล้วกดบันทึก — ใช้แทน PIN ได้</p>
+      <div class="setup-row">
+        <input type="text" id="setup-link" autocomplete="off" spellcheck="false" aria-label="วางลิงก์ส่วนตัว" placeholder="วางลิงก์ส่วนตัว (…/pallet-check/?k=…)">
+        <button type="button" class="btn" id="btn-setup">บันทึกและดึงข้อมูล</button>
+      </div>
+    </details>
     <p class="drive-msg" id="setup-msg" role="status" aria-live="polite"></p>
   </section>
 
@@ -1670,6 +1682,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 });
 
 </script>
+<script>window.PALLET_LOCK={"v":1,"iter":600000,"salt":"GwBapAu1bTBdLt9K4+252w==","iv":"8bc4akREVaBWoELy","ct":"tt9ae/5SScdDLsaKTXL1+pAU5luqLzJ5zup/j7HxynyhkflAqpsEFaNrIk+BpQsbbWBU5EqJdrPPO7I+4hwjkcOpKlJ/pMpXb0MUXxy0a/uSvNL3yQ+EY1hRuY3PeheD4R0h+xycNjSAvJha9Cs4rMZ5bOivNyK1cqmzWRJcZvaHDDkER/TG8q+33EjROERpyV32WP/aE/+Fkvx1iPbu1cRKEYgC1nfv2WzBEZzGB1+mNZ0ga43vZTZC3in6QG+pVf1gzsBLsz5SEIIXYT8Um90CqnWUw4/M5cN8C0IoZX5IGu9aZgtNyBTbxJSHGViirGtIS2ZoCMuMqpm6CFQijHxnbIQ4pcy76J1ozxq0Z640"};</script>
 <script>
 /* ดึงไฟล์ล่าสุดจาก Google Drive อัตโนมัติ (ผ่านตัวเชื่อม Google Drive ของ claude.ai)
  *
@@ -1761,6 +1774,27 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!cfg) return false;
     try { G().localStorage.setItem(CFG_STORE, JSON.stringify(cfg)); } catch (e) { return false; }
     return true;
+  }
+  // ---------- ค่าตั้งต้นที่เข้ารหัสด้วย PIN (ฝังในเว็บฉบับสาธารณะ: window.PALLET_LOCK จาก tools/make-lock.js) ----------
+  function lockInfo() {
+    var L = G().PALLET_LOCK;
+    return L && L.v === 1 && L.salt && L.iv && L.ct && L.iter > 0 ? L : null;
+  }
+  /** true = หน้านี้มีค่าตั้งต้นแบบเข้ารหัส และเบราว์เซอร์ถอดรหัสได้ (ต้องเป็น https/localhost) */
+  function hasLock() { var g = G(); return !!(lockInfo() && g.crypto && g.crypto.subtle); }
+  function b64Bytes(b64) { var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  /** ถอดรหัสค่าตั้งต้นด้วย PIN → เก็บในเครื่อง · คืน Promise<true|false> (false = PIN ผิด/ถอดไม่ได้) */
+  function unlock(pin) {
+    var g = G(), L = lockInfo();
+    if (!L || !g.crypto || !g.crypto.subtle || !pin) return Promise.resolve(false);
+    var enc = new TextEncoder(), sub = g.crypto.subtle;
+    return sub.importKey('raw', enc.encode(String(pin).trim()), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+      return sub.deriveKey({ name: 'PBKDF2', salt: b64Bytes(L.salt), iterations: L.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    }).then(function (key) {
+      return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(L.iv) }, key, b64Bytes(L.ct));
+    }).then(function (buf) {
+      return saveCfg(new TextDecoder().decode(buf));
+    }).catch(function () { return false; });
   }
   /** true = เปิดเป็นเว็บทั่วไป (http/https) ที่ดึง Drive ได้ถ้ามีค่าตั้งต้น — ใช้ตัดสินว่าจะชวนให้ตั้งค่าหรือไม่ */
   function webCapable() { var loc = G().location; return !!(loc && /^https?:$/.test(loc.protocol)); }
@@ -1992,7 +2026,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, pickFiles: pickFiles, fileMonth: fileMonth,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, hasLock: hasLock, unlock: unlock, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -3301,6 +3335,20 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       if (!ok) {                             // ไม่มีตัวเชื่อม/ค่าตั้งต้น → เลือกไฟล์เองได้ตามเดิม
         if (window.PalletDrive.webCapable && window.PalletDrive.webCapable()) {      // เว็บทั่วไปที่ยังไม่มีค่าตั้งต้นในเบราว์เซอร์นี้ → บอกสาเหตุและให้ตั้งค่า
           state.needSetup = true; $('#drive-setup').hidden = false;
+          if (window.PalletDrive.hasLock && window.PalletDrive.hasLock()) {      // เว็บฉบับสาธารณะ: ปลดล็อกค่าตั้งต้นด้วย PIN ครั้งเดียวต่อเบราว์เซอร์
+            $('#setup-pin').hidden = false; $('#setup-linkbox').open = false;
+            $('#pin-form').addEventListener('submit', function (e) {
+              e.preventDefault();
+              var btn = $('#btn-pin'); btn.disabled = true; $('#setup-msg').textContent = 'กำลังตรวจ PIN…';
+              window.PalletDrive.unlock($('#setup-pin-input').value).then(function (ok) {
+                if (ok) { location.reload(); return; }
+                btn.disabled = false; $('#setup-msg').textContent = 'PIN ไม่ถูกต้อง — ลองใหม่อีกครั้ง'; $('#setup-pin-input').select();
+              });
+            });
+            $('#setup-pin-input').focus();
+          } else {
+            $('#h-setup').textContent = 'เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive';
+          }
           $('#btn-setup').addEventListener('click', function () {
             if (window.PalletDrive.saveCfg($('#setup-link').value)) location.reload();
             else $('#setup-msg').textContent = 'ลิงก์นี้ใช้ไม่ได้ — ต้องเป็นลิงก์ส่วนตัวที่มี #k=… และรหัสโฟลเดอร์ (n, c, e, s, b, i)';
@@ -3331,7 +3379,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var sum = $('#data-sum'); clear(sum);
     var nOut = state.out.files.length, nIn = state.in.files.length, sheets = selectedSheets('out').length + selectedSheets('in').length;
     if (driveBusy) { sum.textContent = 'กำลังดึงไฟล์ล่าสุดจาก Google Drive…'; return; }
-    if (!nOut && !nIn && state.needSetup) { sum.textContent = 'ยังไม่ได้ดึงข้อมูล — เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive (ดูกล่องด้านล่าง) หรือเลือกไฟล์เอง'; return; }
+    if (!nOut && !nIn && state.needSetup) { sum.textContent = (window.PalletDrive.hasLock && window.PalletDrive.hasLock() ? 'ยังไม่ได้ดึงข้อมูล — ใส่ PIN ในกล่องด้านล่างหนึ่งครั้ง แล้วเครื่องนี้จะดึงจาก Google Drive เองทุกครั้ง' : 'ยังไม่ได้ดึงข้อมูล — เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive (ดูกล่องด้านล่าง) หรือเลือกไฟล์เอง'); return; }
     if (!nOut && !nIn) { sum.textContent = window.PalletDrive && !$('#btn-drive').hidden ? 'ยังไม่มีข้อมูล — กด “ดึงใหม่จาก Drive” หรือเลือกไฟล์เอง' : 'ยังไม่มีข้อมูล — เลือกไฟล์ภาคจ่ายทั้ง 5 ภาคและไฟล์รับภูมิภาค หรือกด “ลองใช้ข้อมูลตัวอย่าง”'; return; }
     sum.appendChild(h('b', { text: 'ข้อมูลที่ใช้: ' }));
     sum.appendChild(document.createTextNode('ขาออก ' + nOut + ' ไฟล์ · ขารับเข้า ' + nIn + ' ไฟล์ · ' + sheets + ' ชีต' +
