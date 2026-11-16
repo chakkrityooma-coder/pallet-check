@@ -450,7 +450,7 @@ table.ck th, table.ck td { font-size:.875rem; }
   <section class="card databar" id="databar" aria-label="ข้อมูลที่ใช้ตรวจ">
     <p class="databar-sum" id="data-sum" role="status" aria-live="polite">ยังไม่มีข้อมูล</p>
     <div class="databar-act">
-      <label class="from-date">ตั้งแต่วันที่ <input type="date" id="from-date" value="2026-11-01" min="2020-01-01" aria-label="ดึงและตรวจข้อมูลตั้งแต่วันที่"></label>
+      <label class="from-date">ขาออกตั้งแต่วันที่ <input type="date" id="from-date" value="2026-11-01" min="2020-01-01" aria-label="ดึงและตรวจข้อมูลตั้งแต่วันที่"></label>
       <button type="button" class="btn primary" id="btn-drive" hidden>ดึงใหม่จาก Drive</button>
       <button type="button" class="btn" id="btn-inputs" aria-expanded="true" aria-controls="inputs">ไฟล์และชีตที่ใช้</button>
     </div>
@@ -2326,6 +2326,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
   function readFile(file) { return file.arrayBuffer().then(function (buf) { return readBuffer(file.name, buf); }); }
 
+  var IN_LAG_DAYS = 1;
+  /** วันที่เริ่มนับขารับ = วันที่เริ่มของขาออก + IN_LAG_DAYS (ISO) */
+  function inFrom() {
+    var p = state.from.split('-'), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + IN_LAG_DAYS));
+    return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2);
+  }
   function parseEntry(entry) {
     entry.sheets = entry.raw.map(function (s) {
       return { name: s.name, parsed: core.parseSheet(s.rows, s.name, entry.layout), selected: false };
@@ -2333,13 +2339,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     // ถ้ามีชีตที่ตั้งชื่อเป็นวันที่ → เลือกเฉพาะชีตวันที่ (ชีตอื่นมักเป็นแม่แบบ/สำเนา เสี่ยงนับซ้ำ)
     var anyDated = entry.sheets.some(function (s) { return s.parsed.usable && s.parsed.dateFromName; });
     entry.sheets.forEach(function (s) {
-      var inRange = !s.parsed.date || s.parsed.date >= state.from;      // ชีตของวันก่อนวันที่เริ่มไม่ติ๊กให้
+      var lo = entry.side === 'in' ? inFrom() : state.from;             // ขารับเริ่มนับช้ากว่าขาออก 1 วัน (รถที่รับเข้าวันแรกส่วนใหญ่ปล่อยออกตั้งแต่ก่อนวันที่เริ่ม)
+      var inRange = !s.parsed.date || s.parsed.date >= lo;              // ชีตของวันก่อนวันที่เริ่มไม่ติ๊กให้
       s.selected = s.parsed.usable && s.parsed.stats.records > 0 && (!anyDated || s.parsed.dateFromName) && inRange;
     });
   }
   function addEntry(side, name, sheets, key) {
     if (key && state[side].files.some(function (f) { return f.key === key; })) return false; // ไฟล์เดิม (ชื่อ+ขนาดเท่ากัน) → ไม่เพิ่มซ้ำ กันนับพาเลทสองรอบ
-    var entry = { id: ++uid, key: key, name: name, layout: 'auto', raw: sheets, sheets: [] };
+    var entry = { id: ++uid, key: key, name: name, layout: 'auto', raw: sheets, sheets: [], side: side };
     parseEntry(entry);
     state[side].files.push(entry);
     return true;
@@ -2742,7 +2749,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         h('span', { class: 'st-m', text: 'รับภูมิภาคที่จับคู่กับเที่ยวปล่อยไม่ได้ — กดดูรายการ' }),
         h('span', { class: 'st-s st-links' },
           h('button', { type: 'button', class: 'linklike', onclick: function () { go('zero'); } }, 'ภาคจ่ายลงพาเลท 0: ' + fmt(skipIn)),
-          h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, 'ปล่อยก่อน 1 พ.ย./ทะเบียนไม่ตรง: ' + fmt(Math.round((orphBefore + orphNoOut) * 100) / 100)))),
+          h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, 'ปล่อยก่อน ' + core.fmtDate(state.from).replace(/\s*\d+$/, '') + '/ทะเบียนไม่ตรง: ' + fmt(Math.round((orphBefore + orphNoOut) * 100) / 100)))),
       h('div', { class: 'st-tile st-sumin' },
         h('span', { class: 'st-l', text: '= รวมรับเข้า' }), h('span', { class: 'st-n' }, fmt(allIn), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'รับภูมิภาคทั้งไฟล์' }), h('span', { class: 'st-s', text: fmt(K.inn) + ' + ' + fmt(notCount) + ' = ' + fmt(allIn) })),
@@ -3401,7 +3408,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!nOut && !nIn) { sum.textContent = window.PalletDrive && !$('#btn-drive').hidden ? 'ยังไม่มีข้อมูล — กด “ดึงใหม่จาก Drive” หรือเลือกไฟล์เอง' : 'ยังไม่มีข้อมูล — เลือกไฟล์ภาคจ่ายทั้ง 5 ภาคและไฟล์รับภูมิภาค หรือกด “ลองใช้ข้อมูลตัวอย่าง”'; return; }
     sum.appendChild(h('b', { text: 'ข้อมูลที่ใช้: ' }));
     sum.appendChild(document.createTextNode('ขาออก ' + nOut + ' ไฟล์ · ขารับเข้า ' + nIn + ' ไฟล์ · ' + sheets + ' ชีต' +
-      ' · ตั้งแต่ ' + core.fmtDate(state.from) + (state.driveNote ? ' · ' + state.driveNote + (state.driveTime ? ' เวลา ' + state.driveTime : '') : '')));
+      ' · ขาออกตั้งแต่ ' + core.fmtDate(state.from) + ' · ขารับตั้งแต่ ' + core.fmtDate(inFrom()) + (state.driveNote ? ' · ' + state.driveNote + (state.driveTime ? ' เวลา ' + state.driveTime : '') : '')));
     if (state.driveBad) sum.appendChild(h('span', { class: 'warn', text: ' · มี ' + state.driveBad + ' ไฟล์ดึงไม่สำเร็จ (กด “ไฟล์และชีตที่ใช้” ดูสาเหตุ)' }));
   }
 
