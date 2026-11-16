@@ -78,6 +78,29 @@ main { padding:24px 0 48px; }
 #inputs[hidden] { display:none; }
 main.has-res .lead { display:none; }
 
+/* ---------- ยอดพาเลทคงคลังรายสัปดาห์ ---------- */
+.card.stock { margin:0 0 16px; }
+.stock-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px 16px; flex-wrap:wrap; }
+.stock-head h2 { margin:0 0 2px; font-size:1.0625rem; } .stock-head .hint { margin:0; }
+.stock-grid { display:grid; grid-template-columns:1.4fr repeat(4,1fr) 1fr; gap:10px; margin-top:12px; align-items:end; }
+@media (max-width: 1000px) { .stock-grid { grid-template-columns:repeat(3,1fr); } }
+@media (max-width: 560px) { .stock-grid { grid-template-columns:repeat(2,1fr); } .stock-grid .wk { grid-column:1 / -1; } }
+.sf { display:flex; flex-direction:column; gap:4px; font-size:.875rem; font-weight:600; min-width:0; }
+.sf input { padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:inherit; font-weight:700; font-size:1.125rem; min-width:0; width:100%; }
+.sf input[type="date"], .sf.by input { font-size:.9375rem; font-weight:500; }
+.sf .sub { font-weight:400; font-size:.75rem; color:var(--muted); }
+.sf .dept { align-self:flex-start; font-size:.75rem; padding:1px 8px; border-radius:999px; }
+.d-ecom { background:var(--short-bg); color:var(--short); } .d-org { background:var(--over-bg); color:var(--over); } .d-disp { background:var(--ok-bg); color:var(--ok); }
+.sf.tot { padding:8px 12px; border-radius:10px; background:var(--surface-2); border:1px solid var(--border); }
+.sf.tot b { font-size:1.5rem; line-height:1.2; font-variant-numeric:tabular-nums; }
+.stock-actions { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-top:10px; }
+.stock-actions .by { flex:0 1 220px; }
+#stock-hist { margin-top:14px; }
+table.stab th, table.stab td { padding:6px 10px; font-size:.875rem; }
+table.stab thead th { position:static; white-space:nowrap; }
+table.stab tr.on td { background:var(--ok-bg); }
+table.stab td.b { font-weight:800; }
+
 /* ---------- ดึงจาก Google Drive ---------- */
 .card.drive { margin:0 0 16px; }
 .drive-setup { border-color:var(--short); } .drive-setup h2 { margin:0 0 4px; font-size:1.0625rem; color:var(--short); }
@@ -456,6 +479,39 @@ table.ck th, table.ck td { font-size:.875rem; }
       <button type="button" class="btn primary" id="btn-drive" hidden>ดึงใหม่จาก Drive</button>
       <button type="button" class="btn" id="btn-inputs" aria-expanded="true" aria-controls="inputs">ไฟล์และชีตที่ใช้</button>
     </div>
+  </section>
+
+  <section class="card stock" id="stock" aria-labelledby="h-stock" hidden>
+    <div class="stock-head">
+      <div>
+        <h2 id="h-stock">ยอดพาเลทคงคลังรายสัปดาห์</h2>
+        <p class="hint">แต่ละแผนกกรอกยอดของตัวเอง สัปดาห์ละครั้ง — เว้นว่าง = ไม่แก้ช่องนั้น (ของแผนกอื่นไม่ถูกทับ) · แก้ไขย้อนหลังได้ · ทุกคนเห็นยอดเดียวกัน</p>
+      </div>
+      <button type="button" class="btn" id="btn-stock-reload">โหลดใหม่</button>
+    </div>
+    <div id="stock-setup" hidden>
+      <p class="hint" id="stock-setup-msg"></p>
+      <form class="setup-row" id="stock-pin-form" autocomplete="off" hidden>
+        <input type="password" id="stock-pin" inputmode="numeric" autocomplete="off" aria-label="PIN" placeholder="PIN">
+        <button type="submit" class="btn primary">ปลดล็อก</button>
+      </form>
+    </div>
+    <form id="stock-form" autocomplete="off" hidden>
+      <div class="stock-grid">
+        <label class="sf wk">สัปดาห์ (เลือกวันใดก็ได้ในสัปดาห์)<input type="date" id="stock-week"><span class="sub" id="stock-week-txt"></span></label>
+        <label class="sf"><span class="dept d-ecom">อีคอม</span>คลัง 3<input type="number" id="st-ecom3" min="0" step="1" inputmode="numeric" placeholder="–"></label>
+        <label class="sf"><span class="dept d-ecom">อีคอม</span>คลัง 4<input type="number" id="st-ecom4" min="0" step="1" inputmode="numeric" placeholder="–"></label>
+        <label class="sf"><span class="dept d-org">องค์กร</span>คลัง 2<input type="number" id="st-org2" min="0" step="1" inputmode="numeric" placeholder="–"></label>
+        <label class="sf"><span class="dept d-disp">ภาคจ่าย</span>หมุนเวียน<input type="number" id="st-dispatch" min="0" step="1" inputmode="numeric" placeholder="–"></label>
+        <div class="sf tot">รวมทั้งหมด<b id="stock-total">–</b><span class="sub">พาเลท</span></div>
+      </div>
+      <div class="stock-actions">
+        <label class="sf by">ผู้บันทึก<input type="text" id="stock-by" maxlength="60" placeholder="ชื่อ / แผนก"></label>
+        <button type="submit" class="btn primary" id="btn-stock-save">บันทึกยอดสัปดาห์นี้</button>
+        <span class="drive-msg" id="stock-msg" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+    <div id="stock-hist"></div>
   </section>
 
   <div id="inputs">
@@ -1692,7 +1748,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 });
 
 </script>
-<script>window.PALLET_LOCK={"v":1,"iter":600000,"salt":"jkWGPh9MZAt6cmj4DNAECQ==","iv":"SWgCE4dQSXJ8QeN6","ct":"xzSVTX0MvAW84ROFK0h/t39YPLw2hqQ9IMTI8BC3gNoU08rAa9H7vT0oqyAyVRQrzWSAy21RLj9LFj1dj0kkwIy1TFFrX9zcK/I9OS5qWDoIo/bROKC9XeXZR2elPWM9lvK4gKc8DAEoBODUQxjVpLbA/J8QWrozuH6gV1ESzJJ8i5zPyFyO5j+FNVZli60r0oT4KiRq6dYaKCYWmZ1yNNlnADnctmKzlqsBhxKXlzbpKRIuX/kGyHPmS4ECcAylNqajEpa+5nzdSGhrnozFqWnzUuvhKIQj/tHxT1Oqe9OBrSrX+WwRXxOwVgOtU9VPNXPniSdLEhPabrENmNkKynITsdvJnTBBgOyIriAROH9p"};</script>
+<script>window.PALLET_LOCK={"v":1,"f":[],"iter":600000,"salt":"LoKpwZ2kw92aqN3I8JHajw==","iv":"BlC0bnrF99s9nS2w","ct":"k+yffVJ0OB9R0qlS0RusdsHfRt4TgGuUoAFUB7HPvss/OBsbWCBuzziF7mG35Z+1sOU8k4setcsCcSr+pVZ26iloeDxWlTQYRBOsx4wYm1uEf/WZ591T7oZHyAAHKbyxeTtWOb+y4E2jjHgYjqEy3m1rgTpH0C3buzN7ERM3NbF2gT1vjWFEHGfUpLku4+k8wT1FhniGDGXCrVivxYGH+ZFlPZVk4mFP/GR7P/2nadvSp7yPtXMXodwUikZjD8qsvc1xJ7KPUiIQDqy0/p+LDZHuh0ACXC5RXWO3inEkxUSDnygu4pyYucNiP6oCznZ1DGnQy2afk28ZDO3mYOcw1pOeXIUT3Y2FmdhaC7JKaxrH"};</script>
 <script>
 /* ดึงไฟล์ล่าสุดจาก Google Drive อัตโนมัติ (ผ่านตัวเชื่อม Google Drive ของ claude.ai)
  *
@@ -1761,8 +1817,14 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (!p.k) return null;
     var ids = {};
     Object.keys(WEB_IDS).forEach(function (sid) { var v = p[WEB_IDS[sid]]; if (v && /^[A-Za-z0-9_-]{10,}$/.test(v)) ids[sid] = v; });
-    return Object.keys(ids).length ? { key: p.k, ids: ids } : null;
+    if (!Object.keys(ids).length) return null;
+    var cfg = { key: p.k, ids: ids };
+    // w = ที่อยู่เว็บแอป Apps Script ที่เก็บยอดพาเลทรายสัปดาห์ · t = โทเคนที่สคริปต์ตรวจ (ทั้งคู่อยู่ในค่าตั้งต้นที่เข้ารหัส ไม่อยู่ในไฟล์เว็บ)
+    if (p.w && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(p.w) && p.t) cfg.stock = { url: p.w, token: p.t };
+    return cfg;
   }
+  /** ค่าตั้งต้นของที่เก็บยอดรายสัปดาห์ในเบราว์เซอร์นี้ ({url, token}) หรือ null */
+  function stockCfg() { var c = webConfig(); return c && c.stock && c.stock.url ? c.stock : null; }
   /** ค่าตั้งต้นของเว็บ: จากลิงก์ส่วนตัว (แล้วเก็บ + ลบออกจากแถบที่อยู่) หรือที่เก็บไว้ในเครื่อง · ใช้ได้เฉพาะ http(s) */
   function webConfig() {
     var g = G(), loc = g.location;
@@ -1790,6 +1852,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var L = G().PALLET_LOCK;
     return L && L.v === 1 && L.salt && L.iv && L.ct && L.iter > 0 ? L : null;
   }
+  /** lock ของหน้านี้มีค่าของส่วน name ไหม (เช่น 'stock') */
+  function lockHas(name) { var L = lockInfo(); return !!(L && Array.isArray(L.f) && L.f.indexOf(name) >= 0); }
   /** true = หน้านี้มีค่าตั้งต้นแบบเข้ารหัส และเบราว์เซอร์ถอดรหัสได้ (ต้องเป็น https/localhost) */
   function hasLock() { var g = G(); return !!(lockInfo() && g.crypto && g.crypto.subtle); }
   function b64Bytes(b64) { var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
@@ -2042,7 +2106,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, hasLock: hasLock, unlock: unlock, normPin: normPin, lockId: function () { var L = lockInfo(); return L ? String(L.salt).replace(/[^A-Za-z0-9]/g, '').slice(0, 4) : ''; }, pickFiles: pickFiles, fileMonth: fileMonth,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, stockCfg: stockCfg, hasLock: hasLock, lockHas: lockHas, unlock: unlock, normPin: normPin, lockId: function () { var L = lockInfo(); return L ? String(L.salt).replace(/[^A-Za-z0-9]/g, '').slice(0, 4) : ''; }, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -3399,6 +3463,118 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     });
   }
 
+  // ---------- ยอดพาเลทคงคลังรายสัปดาห์ (เก็บกลางใน Google Sheet ผ่านเว็บแอป Apps Script) ----------
+  var STOCK_F = ['ecom3', 'ecom4', 'org2', 'dispatch'];
+  var stock = { cfg: null, rows: [], busy: false };
+  function iso(d) { return d.getUTCFullYear() + '-' + ('0' + (d.getUTCMonth() + 1)).slice(-2) + '-' + ('0' + d.getUTCDate()).slice(-2); }
+  /** วันใดก็ได้ (ISO) → วันจันทร์ของสัปดาห์นั้น (ISO) */
+  function mondayOf(isoDate) {
+    var p = String(isoDate || '').split('-'); if (p.length !== 3) return '';
+    var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); if (isNaN(d)) return '';
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    return iso(d);
+  }
+  function weekText(mon) {
+    if (!mon) return '';
+    var p = mon.split('-'), e = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + 6));
+    return 'จันทร์ ' + core.fmtDate(mon) + ' – อาทิตย์ ' + core.fmtDate(iso(e));
+  }
+  function stockRow(week) { return stock.rows.filter(function (r) { return r.week === week; })[0] || null; }
+  function stockMsg(t, err) { var m = $('#stock-msg'); m.textContent = t; m.style.color = err ? 'var(--miss)' : ''; }
+  function stockErr(code) {
+    return { bad_token: 'สิทธิ์ไม่ถูกต้อง (โทเคนไม่ตรงกับที่ตั้งในสคริปต์)', bad_week: 'วันที่ของสัปดาห์ไม่ถูกต้อง', no_values: 'ยังไม่ได้กรอกยอดช่องใดเลย' }[code] || 'บันทึก/โหลดไม่สำเร็จ — ลองใหม่อีกครั้ง';
+  }
+  function stockFill() {       // เติมฟอร์มจากยอดที่บันทึกไว้ของสัปดาห์ที่เลือก
+    var wk = mondayOf($('#stock-week').value), r = stockRow(wk);
+    $('#stock-week-txt').textContent = weekText(wk) + (r ? ' · มียอดบันทึกแล้ว (แก้ไขได้)' : ' · ยังไม่มียอด');
+    STOCK_F.forEach(function (f) { $('#st-' + f).value = r && r[f] != null ? r[f] : ''; });
+    stockTotal();
+  }
+  function stockTotal() {
+    var s = 0, any = false;
+    STOCK_F.forEach(function (f) { var v = $('#st-' + f).value; if (v !== '') { s += Number(v) || 0; any = true; } });
+    $('#stock-total').textContent = any ? fmt(s) : '–';
+  }
+  function stockHist() {
+    var box = clear($('#stock-hist'));
+    if (!stock.rows.length) { box.appendChild(h('p', { class: 'hint', text: 'ยังไม่มียอดที่บันทึกไว้' })); return; }
+    var cur = mondayOf($('#stock-week').value), prev = null;
+    var cell = function (v) { return h('td', { class: 'r', text: v == null ? '–' : fmt(v) }); };
+    var body = h('tbody', null, stock.rows.slice(0, 26).map(function (r, i) {
+      var tot = 0, any = false; STOCK_F.forEach(function (f) { if (r[f] != null) { tot += r[f]; any = true; } });
+      var full = function (x) { return STOCK_F.every(function (f) { return x[f] != null; }); };
+      var older = stock.rows[i + 1], ot = null;
+      if (older && full(older) && full(r)) { ot = 0; STOCK_F.forEach(function (f) { ot += older[f]; }); }      // เทียบเฉพาะเมื่อสองสัปดาห์กรอกครบทุกช่อง
+      var chg = ot != null ? tot - ot : null;
+      return h('tr', { class: r.week === cur ? 'on' : '' },
+        h('td', null, h('button', { type: 'button', class: 'linklike', onclick: function () { $('#stock-week').value = r.week; stockFill(); stockHist(); $('#st-ecom3').focus(); } }, core.fmtDate(r.week))),
+        cell(r.ecom3), cell(r.ecom4), cell(r.org2), cell(r.dispatch), h('td', { class: 'r b', text: any ? fmt(tot) : '–' }),
+        h('td', { class: 'r ' + (chg > 0 ? 'c-over' : chg < 0 ? 'c-short' : ''), text: chg == null ? '–' : chg > 0 ? '+' + fmt(chg) : chg < 0 ? '−' + fmt(-chg) : '0' }),
+        h('td', { class: 'm', text: (r.updatedBy || '') + (r.updatedAt ? ' · ' + fmtStamp(r.updatedAt) : '') }));
+    }));
+    box.appendChild(h('div', { class: 'tablewrap' }, h('table', { class: 'dtab stab' }, h('caption', { class: 'sr-only', text: 'ยอดพาเลทคงคลังรายสัปดาห์ที่บันทึกไว้' }),
+      h('thead', null, h('tr', null, h('th', { scope: 'col', text: 'สัปดาห์ (จันทร์)' }), h('th', { scope: 'col', class: 'r', text: 'อีคอม คลัง 3' }), h('th', { scope: 'col', class: 'r', text: 'อีคอม คลัง 4' }),
+        h('th', { scope: 'col', class: 'r', text: 'องค์กร คลัง 2' }), h('th', { scope: 'col', class: 'r', text: 'ภาคจ่าย หมุนเวียน' }), h('th', { scope: 'col', class: 'r', text: 'รวม' }),
+        h('th', { scope: 'col', class: 'r', text: 'เทียบสัปดาห์ก่อน' }), h('th', { scope: 'col', text: 'แก้ไขล่าสุด' }))), body)));
+    box.appendChild(h('p', { class: 'legend', text: 'กดวันที่ของสัปดาห์เพื่อเรียกยอดขึ้นมาแก้ไข · แสดง ' + fmt(Math.min(stock.rows.length, 26)) + ' สัปดาห์ล่าสุด' }));
+  }
+  function stockApply(d) {
+    if (!d || !d.ok) throw Object.assign(new Error('stock'), { code: d && d.error });
+    stock.rows = (d.rows || []).slice().sort(function (a, b) { return a.week < b.week ? 1 : -1; });
+    stockFill(); stockHist();
+  }
+  function stockLoad() {
+    if (stock.busy) return; stock.busy = true; stockMsg('กำลังโหลดยอด…');
+    fetch(stock.cfg.url + '?token=' + encodeURIComponent(stock.cfg.token) + '&action=list').then(function (r) { return r.json(); })
+      .then(function (d) { stockApply(d); stockMsg(''); })
+      .catch(function (e) { stockMsg(stockErr(e && e.code), true); })
+      .then(function () { stock.busy = false; });
+  }
+  function stockSave(ev) {
+    ev.preventDefault(); if (stock.busy) return;
+    var wk = mondayOf($('#stock-week').value), vals = {}, bad = false;
+    STOCK_F.forEach(function (f) { var v = $('#st-' + f).value; if (v === '') return; var n = Number(v); if (!isFinite(n) || n < 0) bad = true; else vals[f] = n; });
+    if (!wk) { stockMsg('เลือกวันที่ของสัปดาห์ก่อน', true); return; }
+    if (bad) { stockMsg('ยอดต้องเป็นตัวเลข 0 ขึ้นไป', true); return; }
+    if (!Object.keys(vals).length) { stockMsg(stockErr('no_values'), true); return; }
+    var by = $('#stock-by').value.trim(); try { localStorage.setItem('pallet-check:stock-by', by); } catch (e) { /* ไม่เป็นไร */ }
+    stock.busy = true; $('#btn-stock-save').disabled = true; stockMsg('กำลังบันทึก…');
+    fetch(stock.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: stock.cfg.token, action: 'save', week: wk, values: vals, by: by }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { stockApply(d); stockMsg('บันทึกแล้ว ' + fmtClock(new Date()) + ' — สัปดาห์ ' + core.fmtDate(wk)); })
+      .catch(function (e) { stockMsg(stockErr(e && e.code), true); })
+      .then(function () { stock.busy = false; $('#btn-stock-save').disabled = false; });
+  }
+  function initStock() {
+    var PD = window.PalletDrive;
+    if (!PD || !PD.webCapable || !PD.webCapable()) return;         // ใช้ได้เฉพาะเว็บทั่วไป (https)
+    stock.cfg = PD.stockCfg && PD.stockCfg();
+    if (!stock.cfg) {
+      // เบราว์เซอร์นี้ยังไม่มีค่าตั้งต้นของส่วนนี้: ถ้าหน้าเว็บมีค่าที่เข้ารหัสไว้ ให้ใส่ PIN อีกครั้งหนึ่งครั้ง (ค่าที่เคยเก็บไว้เป็นรุ่นก่อนมีส่วนนี้)
+      if (!(PD.hasLock && PD.hasLock() && PD.lockHas && PD.lockHas('stock')) || !PD.webConfig()) return;
+      $('#stock').hidden = false; $('#stock-setup').hidden = false; $('#btn-stock-reload').hidden = true;
+      $('#stock-setup-msg').textContent = 'ใส่ PIN อีกครั้งหนึ่งครั้งเพื่อเปิดใช้ส่วนนี้ในเครื่องนี้';
+      var f = $('#stock-pin-form'); f.hidden = false;
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        PD.unlock($('#stock-pin').value).then(function (ok) {
+          if (ok && PD.stockCfg()) { location.reload(); return; }
+          $('#stock-setup-msg').textContent = ok ? 'ส่วนนี้ยังไม่ได้เปิดใช้ (ยังไม่ได้ตั้งที่เก็บยอด)' : 'PIN ไม่ถูกต้อง — ลองใหม่อีกครั้ง';
+        });
+      });
+      return;
+    }
+    $('#stock').hidden = false; $('#stock-form').hidden = false;
+    var t = new Date(), today = t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2);
+    $('#stock-week').value = today;
+    try { $('#stock-by').value = localStorage.getItem('pallet-check:stock-by') || ''; } catch (e) { /* ไม่เป็นไร */ }
+    $('#stock-week').addEventListener('change', function () { stockFill(); stockHist(); });
+    STOCK_F.forEach(function (f) { $('#st-' + f).addEventListener('input', stockTotal); });
+    $('#stock-form').addEventListener('submit', stockSave);
+    $('#btn-stock-reload').addEventListener('click', stockLoad);
+    stockFill(); stockLoad();
+  }
+
   // ---------- แถบข้อมูลที่ใช้ (ผลขึ้นก่อน ไฟล์/ชีตพับเก็บไว้) ----------
   function fmtClock(d) { return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function syncInputs() {
@@ -3480,6 +3656,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   });
 
   render();
+  initStock();
 })();
 
 </script>
