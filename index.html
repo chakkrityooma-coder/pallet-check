@@ -456,7 +456,7 @@ table.ck th, table.ck td { font-size:.875rem; }
     <div id="setup-pin" hidden>
       <p class="hint">ใส่ PIN ครั้งเดียวต่อเครื่อง/เบราว์เซอร์ — หลังจากนั้นเปิดหน้านี้แล้วจะดึงข้อมูลเองทุกครั้ง (ขอ PIN ได้จากหัวหน้า)</p>
       <form class="setup-row" id="pin-form" autocomplete="off">
-        <input type="password" id="setup-pin-input" inputmode="numeric" autocomplete="off" aria-label="PIN" placeholder="PIN">
+        <input type="text" id="setup-pin-input" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="PIN" placeholder="PIN">
         <button type="submit" class="btn primary" id="btn-pin">ปลดล็อกและดึงข้อมูล</button>
       </form>
     </div>
@@ -469,6 +469,7 @@ table.ck th, table.ck td { font-size:.875rem; }
       </div>
     </details>
     <p class="drive-msg" id="setup-msg" role="status" aria-live="polite"></p>
+    <p class="drive-msg" id="setup-ver"></p>
   </section>
 
   <section class="card drive" id="drive-box" aria-labelledby="h-drive" hidden>
@@ -1783,12 +1784,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   /** true = หน้านี้มีค่าตั้งต้นแบบเข้ารหัส และเบราว์เซอร์ถอดรหัสได้ (ต้องเป็น https/localhost) */
   function hasLock() { var g = G(); return !!(lockInfo() && g.crypto && g.crypto.subtle); }
   function b64Bytes(b64) { var bin = atob(b64), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  /** PIN ที่พิมพ์ตอนแป้นพิมพ์เป็นภาษาไทย: แถวตัวเลขจะได้ ๅ / - ภ ถ ุ ึ ค ต จ แทน 1–0 · เลขไทย ๐–๙ → 0–9 */
+  var TH_KEYS = { 'ๅ': '1', '/': '2', '-': '3', 'ภ': '4', 'ถ': '5', 'ุ': '6', 'ึ': '7', 'ค': '8', 'ต': '9', 'จ': '0' };
+  function normPin(v) {
+    return String(v == null ? '' : v).replace(/[๐-๙]/g, function (c) { return String(c.charCodeAt(0) - 0x0E50); })
+      .replace(/[ๅ\/\-ภถุึคตจ]/g, function (c) { return TH_KEYS[c]; }).replace(/\s+/g, '');
+  }
   /** ถอดรหัสค่าตั้งต้นด้วย PIN → เก็บในเครื่อง · คืน Promise<true|false> (false = PIN ผิด/ถอดไม่ได้) */
   function unlock(pin) {
     var g = G(), L = lockInfo();
-    if (!L || !g.crypto || !g.crypto.subtle || !pin) return Promise.resolve(false);
+    if (!L || !g.crypto || !g.crypto.subtle || !normPin(pin)) return Promise.resolve(false);
     var enc = new TextEncoder(), sub = g.crypto.subtle;
-    return sub.importKey('raw', enc.encode(String(pin).trim()), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+    return sub.importKey('raw', enc.encode(normPin(pin)), 'PBKDF2', false, ['deriveKey']).then(function (base) {
       return sub.deriveKey({ name: 'PBKDF2', salt: b64Bytes(L.salt), iterations: L.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     }).then(function (key) {
       return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(L.iv) }, key, b64Bytes(L.ct));
@@ -2026,7 +2033,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, hasLock: hasLock, unlock: unlock, pickFiles: pickFiles, fileMonth: fileMonth,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, hasLock: hasLock, unlock: unlock, normPin: normPin, lockId: function () { var L = lockInfo(); return L ? String(L.salt).replace(/[^A-Za-z0-9]/g, '').slice(0, 4) : ''; }, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -3342,9 +3349,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               var btn = $('#btn-pin'); btn.disabled = true; $('#setup-msg').textContent = 'กำลังตรวจ PIN…';
               window.PalletDrive.unlock($('#setup-pin-input').value).then(function (ok) {
                 if (ok) { location.reload(); return; }
-                btn.disabled = false; $('#setup-msg').textContent = 'PIN ไม่ถูกต้อง — ลองใหม่อีกครั้ง'; $('#setup-pin-input').select();
+                btn.disabled = false; $('#setup-msg').textContent = 'PIN ไม่ถูกต้อง — ลองใหม่อีกครั้ง (ถ้าเพิ่งเปลี่ยน PIN ให้กด Ctrl + F5 เพื่อโหลดหน้าใหม่ก่อน)'; $('#setup-pin-input').select();
               });
             });
+            $('#setup-pin-input').addEventListener('input', function (e) { var v = window.PalletDrive.normPin(e.target.value); if (v !== e.target.value) e.target.value = v; });   // แป้นไทย/เลขไทย → ตัวเลข
+            $('#setup-ver').textContent = 'รหัสรุ่นของหน้านี้: ' + window.PalletDrive.lockId();
             $('#setup-pin-input').focus();
           } else {
             $('#h-setup').textContent = 'เบราว์เซอร์นี้ยังไม่ได้ตั้งค่าดึงจาก Google Drive';
