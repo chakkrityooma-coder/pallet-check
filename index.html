@@ -319,8 +319,6 @@ details.more + details.more { margin-top:12px; }
 .sec-head { display:flex; gap:10px; align-items:flex-start; margin:16px 0 8px; }
 .sec-head h3 { margin:0; font-size:1.0625rem; } .sec-head p { margin:2px 0 0; font-size:.875rem; color:var(--muted); } .sec-head p b { color:var(--text); }
 .sec-no { flex:none; width:28px; height:28px; border-radius:50%; background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-weight:800; }
-.sum5.g3 { grid-template-columns:repeat(3,1fr); }
-@media (max-width: 760px) { .sum5.g3 { grid-template-columns:1fr; } }
 .st-tag { align-self:flex-start; font-size:.75rem; font-weight:800; padding:1px 10px; border-radius:999px; background:currentColor; }
 .st-tag::first-line { color:var(--surface); }
 .glance { gap:12px; margin:6px 0 10px; }
@@ -2746,18 +2744,23 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var orphAll = Math.round((orphBefore + orphNoOut) * 100) / 100;
     box.appendChild(h('div', { class: 'sec-head' }, h('span', { class: 'sec-no', text: '1' }),
       h('div', null, h('h3', { text: 'ภาพรวมพาเลท (นับทุกคันรวมกัน)' }), h('p', { text: 'ใช้ตัวเลขนี้ตอบว่า “พาเลทที่ปล่อยออก กลับเข้ามาครบไหม” — ไม่สนว่ากลับมากับรถคันไหน' }))));
-    box.appendChild(h('div', { class: 'sum5 glance g3', role: 'group', 'aria-label': 'ภาพรวม ปล่อยออก รับกลับเข้า และผลต่าง' },
+    box.appendChild(h('div', { class: 'sum5 sum4 glance g3', role: 'group', 'aria-label': 'ภาพรวม ปล่อยออก รับเข้า และผลต่าง' },
       h('button', { type: 'button', class: 'st-tile st-out', 'aria-pressed': 'false', onclick: function () { go('all'); } },
         h('span', { class: 'st-l', text: 'ปล่อยออก' }), h('span', { class: 'st-n' }, fmt(allOut), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: 'ภาคจ่ายปล่อยออก ตั้งแต่ ' + core.fmtDate(state.from) }), h('span', { class: 'st-s', text: fmt(rowsAll.length) + ' เที่ยว' })),
-      h('div', { class: 'st-tile st-ret' },
-        h('span', { class: 'st-l', text: 'รับกลับเข้า' }), h('span', { class: 'st-n' }, fmt(allIn), h('small', { text: ' พาเลท' })),
-        h('span', { class: 'st-m', text: 'รับภูมิภาครับเข้า ตั้งแต่ ' + core.fmtDate(inFrom()) + ' (ทุกคัน)' }),
+      h('button', { type: 'button', class: 'st-tile st-ret', 'aria-pressed': String(state.filter === 'returned'), onclick: function () { go('returned'); } },
+        h('span', { class: 'st-l', text: 'รับเข้า (ตรงรหัสปล่อยรถ)' }), h('span', { class: 'st-n' }, fmt(K.inn), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'กลับมากับรถคันเดิมที่ปล่อยออก' }), h('span', { class: 'st-s', text: fmt(K.tA) + ' เที่ยว' })),
+      h('div', { class: 'st-tile st-warn', role: 'group', 'aria-label': 'รับเข้าที่ไม่ตรงกับรหัสปล่อยรถ' },
+        h('span', { class: 'st-l', text: '+ รับเข้าไม่ตรงรหัสปล่อยรถ' }), h('span', { class: 'st-n' }, fmt(notCount), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'กลับมากับรถคันอื่น — กดดูรายการ' }),
         h('span', { class: 'st-s st-links' },
-          h('button', { type: 'button', class: 'linklike', onclick: function () { go('returned'); } }, 'กลับมากับรถคันเดิม: ' + fmt(K.inn)),
-          h('button', { type: 'button', class: 'linklike', onclick: function () { go('zero'); } }, 'กลับมากับรถคันอื่น: ' + fmt(skipIn)),
-          orphAll ? h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, 'รถที่ไม่อยู่ในรายการปล่อย: ' + fmt(orphAll)) : null)),
-      h('div', { class: 'st-tile st-net ' + (diffAll > 0 ? 'neg' : diffAll < 0 ? 'pos' : '') },      // diffAll = ปล่อยออก − รับกลับเข้า
+          h('button', { type: 'button', class: 'linklike', onclick: function () { go('zero'); } }, 'รถของเที่ยวที่ปล่อยพาเลท 0: ' + fmt(skipIn)),
+          h('button', { type: 'button', class: 'linklike', onclick: openOrphans }, 'ปล่อยก่อน ' + core.fmtDate(state.from).replace(/\s*\d+$/, '') + '/ทะเบียนไม่ตรง: ' + fmt(orphAll)))),
+      h('div', { class: 'st-tile st-sumin' },
+        h('span', { class: 'st-l', text: '= รวมรับกลับเข้า' }), h('span', { class: 'st-n' }, fmt(allIn), h('small', { text: ' พาเลท' })),
+        h('span', { class: 'st-m', text: 'รับภูมิภาครับเข้า ตั้งแต่ ' + core.fmtDate(inFrom()) + ' (ทุกคัน)' }), h('span', { class: 'st-s', text: fmt(K.inn) + ' + ' + fmt(notCount) + ' = ' + fmt(allIn) })),
+      h('div', { class: 'st-tile st-net ' + (diffAll > 0 ? 'neg' : diffAll < 0 ? 'pos' : '') },      // diffAll = ปล่อยออก − รวมรับกลับเข้า
         h('span', { class: 'st-l', text: 'ผลต่าง (Diff)' }),
         h('span', { class: 'st-n' }, h('small', { class: 'pre', text: diffWord + ' ' }), fmt(diffAbs), h('small', { text: ' พาเลท' })),
         h('span', { class: 'st-m', text: diffAll > 0 ? 'รับกลับเข้าน้อยกว่าที่ปล่อยออก' : diffAll < 0 ? 'รับกลับเข้ามากกว่าที่ปล่อยออก' : 'รับกลับเข้าเท่ากับที่ปล่อยออก' }),
