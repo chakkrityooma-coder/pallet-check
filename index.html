@@ -1748,7 +1748,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 });
 
 </script>
-<script>window.PALLET_LOCK={"v":1,"f":[],"iter":600000,"salt":"LoKpwZ2kw92aqN3I8JHajw==","iv":"BlC0bnrF99s9nS2w","ct":"k+yffVJ0OB9R0qlS0RusdsHfRt4TgGuUoAFUB7HPvss/OBsbWCBuzziF7mG35Z+1sOU8k4setcsCcSr+pVZ26iloeDxWlTQYRBOsx4wYm1uEf/WZ591T7oZHyAAHKbyxeTtWOb+y4E2jjHgYjqEy3m1rgTpH0C3buzN7ERM3NbF2gT1vjWFEHGfUpLku4+k8wT1FhniGDGXCrVivxYGH+ZFlPZVk4mFP/GR7P/2nadvSp7yPtXMXodwUikZjD8qsvc1xJ7KPUiIQDqy0/p+LDZHuh0ACXC5RXWO3inEkxUSDnygu4pyYucNiP6oCznZ1DGnQy2afk28ZDO3mYOcw1pOeXIUT3Y2FmdhaC7JKaxrH"};</script>
+<script>window.PALLET_LOCK={"v":1,"f":["stock"],"iter":600000,"salt":"FRpsNaQpwqTEXuvcduqj3A==","iv":"iWg0fzE7/E3MG8my","ct":"QMP4Did08rkjID+hUyGr329uMWWKlz+o2DwRIP0Pa82LMQbL+V129bZ7K67ZkFAzY5IyPsTL7GPZP5AjiNPMTHHxu6wudfsamlwTRYkWC5Y6RFB/hyZs/Px/yJhfgxV9EqZH0LmegzA4dEdFd1v6dUJmAQSSBRzPml9/V//4tRVtHgKKcjFDOHzv5YEpcJcoVyYub6h6uoxknjKSuEqSXBMF9unJzit5Udg0mF61jCDOCR1Ov36XQ+xcKbaWHetxwAs5SSqrW6IQvHNkPIFXy1vEACr2OtFIATJQdg8FZJ/OSxxKo0KZlj7ayDOZwlTTE209NapSFvv1uj8+3DUn9q4hBvFCiihDJYn2paHyxuNEzzH3zvxLezpq8INx+nr9DEFMEb60jvq8i1sz0GTXHjd3NRq0R4fU5faiY4nv4Q/rWK3BGFVswgHwFjaQeGmmpNdYCz2c/MyP5bqJbAXJtWf1lsisRVZ79Q3g5pS98rkCdczZ/LYEoPHfLjUAz0Q/alFYH2VJYLNg0HxRRU1Ba9SR6w5XPMzbKWDz2GYGK3hoPXKr5Oe6gp63C1RkXF5AjkYW"};</script>
 <script>
 /* ดึงไฟล์ล่าสุดจาก Google Drive อัตโนมัติ (ผ่านตัวเชื่อม Google Drive ของ claude.ai)
  *
@@ -1853,6 +1853,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return L && L.v === 1 && L.salt && L.iv && L.ct && L.iter > 0 ? L : null;
   }
   /** lock ของหน้านี้มีค่าของส่วน name ไหม (เช่น 'stock') */
+  var LOCK_STORE = 'pallet-check:lock-id';
+  /** รหัสรุ่นของค่าตั้งต้นที่เข้ารหัส (4 ตัวแรกของ salt) */
+  function lockId() { var L = lockInfo(); return L ? String(L.salt).replace(/[^A-Za-z0-9]/g, '').slice(0, 4) : ''; }
+  /** true = ค่าที่เก็บในเครื่องถอดมาจาก lock รุ่นก่อน (หน้าเว็บมี lock รุ่นใหม่กว่า) → ควรใส่ PIN อีกครั้ง */
+  function lockStale() {
+    if (!hasLock()) return false;
+    var id = null; try { id = G().localStorage.getItem(LOCK_STORE); } catch (e) { /* ไม่เป็นไร */ }
+    return !!id && id !== lockId();
+  }
   function lockHas(name) { var L = lockInfo(); return !!(L && Array.isArray(L.f) && L.f.indexOf(name) >= 0); }
   /** true = หน้านี้มีค่าตั้งต้นแบบเข้ารหัส และเบราว์เซอร์ถอดรหัสได้ (ต้องเป็น https/localhost) */
   function hasLock() { var g = G(); return !!(lockInfo() && g.crypto && g.crypto.subtle); }
@@ -1873,7 +1882,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     }).then(function (key) {
       return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(L.iv) }, key, b64Bytes(L.ct));
     }).then(function (buf) {
-      return saveCfg(new TextDecoder().decode(buf));
+      var ok = saveCfg(new TextDecoder().decode(buf));
+      if (ok) { try { g.localStorage.setItem(LOCK_STORE, lockId()); } catch (e) { /* ไม่เป็นไร */ } }
+      return ok;
     }).catch(function () { return false; });
   }
   /** true = เปิดเป็นเว็บทั่วไป (http/https) ที่ดึง Drive ได้ถ้ามีค่าตั้งต้น — ใช้ตัดสินว่าจะชวนให้ตั้งค่าหรือไม่ */
@@ -2106,7 +2117,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, stockCfg: stockCfg, hasLock: hasLock, lockHas: lockHas, unlock: unlock, normPin: normPin, lockId: function () { var L = lockInfo(); return L ? String(L.salt).replace(/[^A-Za-z0-9]/g, '').slice(0, 4) : ''; }, pickFiles: pickFiles, fileMonth: fileMonth,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, stockCfg: stockCfg, hasLock: hasLock, lockHas: lockHas, unlock: unlock, normPin: normPin, lockId: lockId, lockStale: lockStale, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -3549,7 +3560,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var PD = window.PalletDrive;
     if (!PD || !PD.webCapable || !PD.webCapable()) return;         // ใช้ได้เฉพาะเว็บทั่วไป (https)
     stock.cfg = PD.stockCfg && PD.stockCfg();
-    if (!stock.cfg) {
+    var stale = !!(stock.cfg && PD.lockStale && PD.lockStale() && PD.lockHas('stock'));   // ค่าในเครื่องเป็นรุ่นเก่ากว่าหน้าเว็บ
+    if (!stock.cfg || stale) {
       // เบราว์เซอร์นี้ยังไม่มีค่าตั้งต้นของส่วนนี้: ถ้าหน้าเว็บมีค่าที่เข้ารหัสไว้ ให้ใส่ PIN อีกครั้งหนึ่งครั้ง (ค่าที่เคยเก็บไว้เป็นรุ่นก่อนมีส่วนนี้)
       if (!(PD.hasLock && PD.hasLock() && PD.lockHas && PD.lockHas('stock')) || !PD.webConfig()) return;
       $('#stock').hidden = false; $('#stock-setup').hidden = false; $('#btn-stock-reload').hidden = true;
