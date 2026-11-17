@@ -2887,7 +2887,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         }); })
         .then(function (d) {
           if (d && d.ok && !d.line && !d.queued) throw Object.assign(new Error('x'), { code: 'old_script' });
-          if (!d || !d.ok) throw Object.assign(new Error('x'), { code: d && d.error });
+          if (!d || !d.ok) throw Object.assign(new Error('x'), { code: d && d.error, detail: d && d.message });
           var nowIso = new Date().toISOString();
           stock.line = stock.line || {};
           if (d.queued) { stock.line.last = { at: nowIso, by: by, week: wk, status: 'รอส่ง', id: d.id }; msg.textContent = '📨 ส่งคำขอแล้ว — คอมส่งไลน์จะส่งรูปเข้ากลุ่มให้'; }
@@ -2900,7 +2900,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         })
         .catch(function (e) {
           var c = e && e.code; msg.textContent = LINE_ERR[c] || (/^line_/.test(c || '') ? 'LINE ไม่รับ (รหัส ' + c.slice(5) + ') — ลองใหม่อีกครั้ง'
-            : c === 'script' ? 'สคริปต์ทำงานไม่สำเร็จ: ' + e.detail : c ? 'ส่งไม่สำเร็จ (' + c + ')' : 'ส่งไม่สำเร็จ — เชื่อมต่อสคริปต์ไม่ได้ (' + (e && e.message || '') + ')');
+            : c === 'script' ? 'สคริปต์ทำงานไม่สำเร็จ: ' + e.detail : c === 'exception' ? 'สคริปต์แจ้ง error: ' + e.detail : c ? 'ส่งไม่สำเร็จ (' + c + ')' : 'ส่งไม่สำเร็จ — เชื่อมต่อสคริปต์ไม่ได้ (' + (e && e.message || '') + ')');
         })
         .then(function () { repState.busy = false; });
     };
