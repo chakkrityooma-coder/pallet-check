@@ -3000,13 +3000,46 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     ops.forEach(function (op) { op(); });
     return cv;
   }
+  /** ข้อความสรุปสั้นๆ ที่ส่งไปพร้อมรูป */
+  function repText(rep) {
+    var now = new Date();
+    var L = ['📊 รายงานตรวจยอดพาเลท (' + core.fmtDate(iso(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())))) + ' ' + fmtClock(now) + ')',
+      'ขาออก ' + rep.ro + ' · ขารับ ' + rep.ri,
+      '• ปล่อยออก ' + fmt(rep.out) + ' พาเลท',
+      '• รับกลับเข้า ' + fmt(rep.allIn) + ' (ตรงรหัส ' + fmt(rep.inn) + ' + ไม่ตรงรหัส ' + fmt(rep.notCount) + ')',
+      '• ผลต่าง ' + (rep.diff ? rep.diffWord + ' ' + fmt(rep.diffAbs) : 'ครบ') + ' พาเลท',
+      '🚚 ติดตามรายคัน ' + fmt(rep.nbPal) + ' พาเลท: ' + rep.nb.map(function (u) { return (u.tag === 'ปกติ' ? 'รถยังวิ่ง' : u.tag) + ' ' + fmt(u.pal); }).join(' · ')];
+    var st = latestStock();
+    if (st) {
+      var tot = 0; STOCK_F.forEach(function (k) { tot += st[k] || 0; });
+      var v = function (k) { return st[k] == null ? '–' : fmt(st[k]); };
+      L.push('📦 คงคลัง (สัปดาห์ ' + core.fmtDate(st.week) + '): อีคอม คลัง 3 ' + v('ecom3') + ' · คลัง 4 ' + v('ecom4') + ' · องค์กร คลัง 2 ' + v('org2') + ' · ภาคจ่าย ' + v('dispatch') + ' · รวม ' + fmt(tot));
+    }
+    if (rep.missing.length) L.push('⚠ ไม่มีข้อมูลภาคจ่าย' + rep.missing.join(' / '));
+    return L.join('\n');
+  }
   function showReport(box, rep) {
     clear(box); box.hidden = false;
     var cv = drawReport(rep), url = cv.toDataURL('image/png');
     var name = 'รายงานพาเลท-' + iso(new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()))) + '.png';
     var msg = h('span', { class: 'rep-msg', role: 'status' });
+    var text = repText(rep);
     var acts = h('div', { class: 'rep-acts' },
-      h('a', { class: 'btn primary', href: url, download: name, text: '⬇ บันทึกเป็นรูป' }));
+      h('button', { type: 'button', class: 'btn primary', text: '📤 ส่ง (รูป + ข้อความ)', onclick: function () {
+        cv.toBlob(function (blob) {
+          var file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { /* เบราว์เซอร์เก่า */ }
+          var data = { title: 'รายงานตรวจยอดพาเลท', text: text, files: file ? [file] : [] };
+          if (file && navigator.share && navigator.canShare && navigator.canShare(data)) {
+            navigator.share(data).then(function () { msg.textContent = 'ส่งแล้ว'; }, function (e) { if (!e || e.name !== 'AbortError') msg.textContent = 'ส่งไม่สำเร็จ — ลองใหม่อีกครั้ง'; });
+            return;
+          }
+          // เครื่องที่ส่งตรงไม่ได้: ดาวน์โหลดรูป + คัดลอกข้อความให้ไปวาง
+          var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+          var done = function (ok) { msg.textContent = ok ? 'เครื่องนี้ส่งตรงไม่ได้ — ดาวน์โหลดรูปแล้ว และคัดลอกข้อความแล้ว: เปิดแชต กด Ctrl+V วางข้อความ แล้วแนบรูป' : 'เครื่องนี้ส่งตรงไม่ได้ — ดาวน์โหลดรูปแล้ว แนบรูปในแชตได้เลย'; };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); }); else done(false);
+        }, 'image/png');
+      } }),
+      h('a', { class: 'btn', href: url, download: name, text: '⬇ บันทึกเป็นรูป' }));
     if (navigator.clipboard && window.ClipboardItem) {
       acts.appendChild(h('button', { type: 'button', class: 'btn', text: '📋 คัดลอกรูป (ไปวางในแชต)', onclick: function () {
         cv.toBlob(function (b) {
