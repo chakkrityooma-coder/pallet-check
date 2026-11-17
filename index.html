@@ -2879,7 +2879,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       var by = whoName(who) || 'ผู้จัดการ';
       fetch(stock.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ token: stock.cfg.token, action: 'line', week: wk, image: cv.toDataURL('image/jpeg', 0.9), by: by }) })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { return r.text().then(function (t) {
+          try { return JSON.parse(t); } catch (e) {          // สคริปต์ล้ม → หน้า error ของ Google: ดึงข้อความ error ออกมาแสดง
+            var m = /(Exception|Error|ข้อผิดพลาด)[^<]{0,200}/.exec(t.replace(/&#39;/g, "'").replace(/&quot;/g, '"'));
+            throw Object.assign(new Error('x'), { code: 'script', detail: m ? m[0] : 'HTTP ' + r.status });
+          }
+        }); })
         .then(function (d) {
           if (d && d.ok && !d.line && !d.queued) throw Object.assign(new Error('x'), { code: 'old_script' });
           if (!d || !d.ok) throw Object.assign(new Error('x'), { code: d && d.error });
@@ -2894,7 +2899,8 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             .then(function (r) { return r.json(); }).then(function (d2) { if (d2 && d2.ok) stockApply(d2); }).catch(function () { /* ไม่เป็นไร */ });
         })
         .catch(function (e) {
-          var c = e && e.code; msg.textContent = LINE_ERR[c] || (/^line_/.test(c || '') ? 'LINE ไม่รับ (รหัส ' + c.slice(5) + ') — ลองใหม่อีกครั้ง' : 'ส่งไม่สำเร็จ — ลองใหม่อีกครั้ง');
+          var c = e && e.code; msg.textContent = LINE_ERR[c] || (/^line_/.test(c || '') ? 'LINE ไม่รับ (รหัส ' + c.slice(5) + ') — ลองใหม่อีกครั้ง'
+            : c === 'script' ? 'สคริปต์ทำงานไม่สำเร็จ: ' + e.detail : c ? 'ส่งไม่สำเร็จ (' + c + ')' : 'ส่งไม่สำเร็จ — เชื่อมต่อสคริปต์ไม่ได้ (' + (e && e.message || '') + ')');
         })
         .then(function () { repState.busy = false; });
     };
