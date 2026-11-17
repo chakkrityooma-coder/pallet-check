@@ -105,7 +105,8 @@ table.stab td.b { font-weight:800; }
 .card.drive { margin:0 0 16px; }
 .drive-setup { border-color:var(--short); } .drive-setup h2 { margin:0 0 4px; font-size:1.0625rem; color:var(--short); }
 .setup-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-.pin-show { display:inline-flex; align-items:center; gap:6px; font-size:.875rem; color:var(--muted); }
+.who { margin:0; font-size:.875rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 10px; align-items:center; }
+.who b { color:var(--text); }
 #setup-pin-input { flex:0 1 200px; font-size:1.25rem; letter-spacing:.2em; text-align:center; }
 .drive-setup details.paste { margin-top:12px; }
 .setup-row input { flex:1 1 320px; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:inherit; }
@@ -488,6 +489,7 @@ table.ck th, table.ck td { font-size:.875rem; }
 
   <section class="card databar" id="databar" aria-label="ข้อมูลที่ใช้ตรวจ">
     <p class="databar-sum" id="data-sum" role="status" aria-live="polite">ยังไม่มีข้อมูล</p>
+    <p class="who" id="who" hidden></p>
     <div class="databar-act">
       <label class="from-date">ขาออกตั้งแต่วันที่ <input type="date" id="from-date" value="2026-11-01" min="2020-01-01" aria-label="ดึงและตรวจข้อมูลตั้งแต่วันที่"></label>
       <button type="button" class="btn primary" id="btn-drive" hidden>ดึงใหม่จาก Drive</button>
@@ -530,11 +532,11 @@ table.ck th, table.ck td { font-size:.875rem; }
 
   <div id="inputs">
   <section class="card drive drive-setup" id="drive-setup" aria-labelledby="h-setup" hidden>
-    <h2 id="h-setup">ใส่ PIN เพื่อดึงข้อมูลจาก Google Drive</h2>
+    <h2 id="h-setup">เข้าใช้งานด้วยรหัสพนักงาน</h2>
     <div id="setup-pin" hidden>
-      <p class="hint">ใส่ PIN ครั้งเดียวต่อเครื่อง/เบราว์เซอร์ — หลังจากนั้นเปิดหน้านี้แล้วจะดึงข้อมูลเองทุกครั้ง (ขอ PIN ได้จากหัวหน้า)</p>
+      <p class="hint">หัวหน้าแผนก / หัวหน้าทีม ใส่<b>รหัสพนักงานของตัวเอง</b> (ผู้จัดการใช้ PIN) — ใส่ครั้งเดียวต่อเครื่อง หลังจากนั้นเปิดหน้านี้แล้วจะดึงข้อมูลเองทุกครั้ง</p>
       <form class="setup-row" id="pin-form" autocomplete="off">
-        <input type="password" id="setup-pin-input" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="PIN" placeholder="PIN">
+        <input type="password" id="setup-pin-input" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="รหัสพนักงาน หรือ PIN" placeholder="รหัสพนักงาน">
         <button type="submit" class="btn primary" id="btn-pin">ปลดล็อกและดึงข้อมูล</button>
       </form>
     </div>
@@ -1761,7 +1763,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 });
 
 </script>
-<script>window.PALLET_LOCK={"v":1,"f":["stock"],"iter":600000,"salt":"FRpsNaQpwqTEXuvcduqj3A==","iv":"iWg0fzE7/E3MG8my","ct":"QMP4Did08rkjID+hUyGr329uMWWKlz+o2DwRIP0Pa82LMQbL+V129bZ7K67ZkFAzY5IyPsTL7GPZP5AjiNPMTHHxu6wudfsamlwTRYkWC5Y6RFB/hyZs/Px/yJhfgxV9EqZH0LmegzA4dEdFd1v6dUJmAQSSBRzPml9/V//4tRVtHgKKcjFDOHzv5YEpcJcoVyYub6h6uoxknjKSuEqSXBMF9unJzit5Udg0mF61jCDOCR1Ov36XQ+xcKbaWHetxwAs5SSqrW6IQvHNkPIFXy1vEACr2OtFIATJQdg8FZJ/OSxxKo0KZlj7ayDOZwlTTE209NapSFvv1uj8+3DUn9q4hBvFCiihDJYn2paHyxuNEzzH3zvxLezpq8INx+nr9DEFMEb60jvq8i1sz0GTXHjd3NRq0R4fU5faiY4nv4Q/rWK3BGFVswgHwFjaQeGmmpNdYCz2c/MyP5bqJbAXJtWf1lsisRVZ79Q3g5pS98rkCdczZ/LYEoPHfLjUAz0Q/alFYH2VJYLNg0HxRRU1Ba9SR6w5XPMzbKWDz2GYGK3hoPXKr5Oe6gp63C1RkXF5AjkYW"};</script>
+<script>window.PALLET_LOCK={"v":2,"f":["stock"],"iter":600000,"salt":"FRpsNaQpwqTEXuvcduqj3A==","iv":"cxDDlxtH5OZP0iNY","ct":"7Ki3ztI7SelZVd0FA45DKWxtcBI5Reu5SNCQfSyjwl7m8gNwubHL4JuzKo7PhipyH5Sck+pF6LaK4eCqfIDMvP0Mb/5P8f/QljgxqmzQoVv/mL5ZOpK9InOS2zHX2E9n8e8rn+iKKAQwPQ0BdMBSmWXCOW+Z1bydHueAI4COVdajRhyvtGPtcvgVXJq1FW84vWLHBFZbLjOYFH0Lp7/g41xxrCxCD9jhia0yhfpn/Eojit9zif1rah0HVVOm1OmTeko0TWIhsrrIjirE1WS4O+bCBosFgic4sBOnZ92c5UJ0KIq7Ga/lxXzHajXY3ojq0U2q0SntazaBHg21Hj26PZd63qhRTe0ISufVpODTDqmZt4bwoshRWWUd1OkCjMNp8GNX9OIPxT6/pyFHO/dQF2pPl/pKqgViGunfmQ463iv0kIu0ODUUEwwYPKe1Mh4MJPGgX2SzQoWQSSdkROS5JhCcNNi21y08apwEEfExyW/ATYttHTU/1AZy4JDiLaPS99U28dQ4F9yybWrNw5pkFMiRoj3kVifSruciTKpmjFaEdCQSruI2KQC02DTB2f+PPonX","keys":[{"iv":"Ndj4v1z0RzDY40//","ct":"wEVG9df21c4FfKduaa0JaRx66FkWhp6PljdSB+mV7N9tiIHHwFctg+EbJFlzD5EGQ6yh97UZQI9l/KbdvvSkPblhsnTKhWFTe0JOroE0G5TMezIUzW96LwTL7XmePnk4j59sguM6g75v+qJuT1r30wDCNhPttfzoOTWrsExNGVpOi1NcKmthifmoVM2St90jux1VghXaAJ6tSbdgwz1DY8RAYUvAS6o9S+9mU2d7P6fNJZuhK7AM2uGwqmpEZ6IYv+usDtNDWkA7IbN9xfl1GpcNPD0vB7exNDA8U9m5s1zLFP2d/xU="},{"iv":"Z3m2eT5IPtPJbPfA","ct":"MTWw8nzZkZ6LdQjLr9gnW8ZlaB7xcq55MTYpDDXSXAapnp7/WwgCEhdgGJ69AJHDT4qPgtIruFyahkEgCVfth+tz2fgHsIk5QIvn9pQ5N3Qtj2JEeFCNQHlfgtf7+YqLuvXmotatgnJHFhzs7bWokbxYl5ucW8bXJwZvfJV4x9l84/cpqxKJYsxVAPnLs4zDLRC5JYD6Fg=="},{"iv":"1dI23mGnNr30QlHH","ct":"cbzVjJ2r5cijS8U4twEj4nm4xgS8tDkjVodQDDWjI0IeCVurSu9260UOXWfENlZMixuuRlFBaf9cLqKHrTj//T6HyoGcDmflbNy3nRdcSLTl5pV0usvbqrgQGG8zEtT4BU/R67BIMVJ2FzWrD4g9hrmYxMFn07BI6XL3PnZe8k+CQ115wu/0MjTsYDzA5NtBMKmLrcdCKPgdbNjfbUh3cwIzlfHuIXbvtFhgw+IvjvmHFPhqSXQW9AMJA5JrlyfkjNB3usTo3a+DU5KQFlXnWI6eBPVWmSEtzb+ygf1w"},{"iv":"dZNVs+1EAxtf3hGs","ct":"dcHOb6VqDJLoVp86U7nDdYwhNt+977guWD9KZ8pmENvFLecYx1sQt/xjebNUJRKMMuxID//MlWh9IbJBZah1UBfcvtzhKSYpkKaHACLPXvLyOkAFGbFpeWI4+YJnv+7NlRw/AAeAKO5tlnrGaHvQlqdZVrU2d7P0BXo12dxQBVMr8aHEWKMpUmONPyeksy/9PYwcq5NVKlNfnsFasBBTONV+QD0flbN89xxCWTXexXfun6E5lgi/j2djtL5+SE0HvR0139tcRH1m4qRbLCmMCi/RUkDqgzw="},{"iv":"vo7mDE+CS+CmP3U4","ct":"bpxiva26REpxTk2SAIdJv5Y9gfsss0AD/skheQgmQQQ9dqgvGSGsljRKSwsZJO7bTv7ilT+h9uGrxdWbIWIrwTdWh5zcIxcVAJf1NwDuWbFrz0O4e3umXCd9bZXmIkE9tgdKEGn/KAB5SpkdrqB2yrzZDAwCQNH3LPiGiKfwQY92JL4fNMgN8MwFlKc0U7ObkRpThJ7LV5RhZB35BBhOI28cL8FMCsLhVDrti5nKRfTaJJO4fIbcJtHqxs5KJUx4YAowlWV1aCf/+EXW9jUMcx1hnlJM+MqQr4kAWdyegKsuv+XTn4Q="},{"iv":"bM5/vEwdlO8qlP0j","ct":"EFQDWH6hUZe0ws7VKlgcCEpNiBBX36JHzuIYFIOOWuHlV5V7/2kTJf8l4ndGJsKy0ktHwNPTRiSX1OBdIRjcm+7x4VHcdQsO9mdIuZUs/68QhNBabri0EtBo7WXVWYppTPdVhi9eEMGhm0zjqij6vk9NceuAgRirbgOy00JcMnHHqF7PygsZTT6jZVURFi+qUtJG98v4Ql+x5lq0tI+wuzlAcQmwhWQL"},{"iv":"0Zy9FntOGVuseruh","ct":"ZZ4HVN7Z8ZiJYq9/cGucw7DhlS0+WENtUJ7gL2yyy4SYtrQ+CnAKMSrlr4SwK8fylAtPlbEgs6XeLE/Qm87oMn3F2qJIFRq2ggENmFklSge4sxmp32NMC51lK6InryqzLXvTf7qtYudOePaaOKIkqzuCuOh44JDnh0wAv7hCRkOwdt8OPsPLjJMBPKvZyYfd2QSwKTGMxHt1N4u9hcIKnBe9pgQFiiD5ZBdEq3au2sLtLpvzdylB/s7b5+AYNgibxY4rNMVKeZL0ixBLDxE="},{"iv":"N+AkN+q4O3baTsQS","ct":"GfN39SPlPHF4xD983ckW/2B92H/YzufbQlUOR0iIkGFgJcVFwai3ukM0ZxPtRg3I6WARBYDgaB/GNNF4lU+cCLATr5T2JQlW+q4yls6qVfHCxPzhwMcImvcjH8pwwAPhIHvZ7OkHPQOjlyZ8iwUdYGGtKwl/FosVGY+sS4CUujW3+CyvmHFVdugvEW/u63LPs9HOfGFsGELOcmpO2iMoJEYW5GyxVRyCOA3ajPuQ786qRK8+pjJO435EskV/GjWAfEGWaDz2KoUa84E/VT2U5eDr5YrSl8xz/xkvN62p7xBl//SHLm/78Q=="},{"iv":"e9Pj69+U8Sj6DgYb","ct":"iW1gLyS459CPahjoE0PexmuSi3Nr3y1YRoYA48yQfE1L5/C+o6/Umf3Bvg3ihB9aueFq0Es1WNMLZq3GGpNudXtTtM8gWGmZbhpynwaLDK8x1B5gGdh3IVzRfF2R+1HQaSnWZHJqTxKoYxGld9H6J9brQAuzDRavuoizXtsG607ATGCl6PYdxfHj6poyu+mBUzrm+08jJKlHNjw/0+8XTM5vnGGjtDxHUuHRFXjps+FZIkGFlpGIF8GLSX/oripDyAMBCyT5GZ/UscVvL79YlrNTmjPxFOkUx0lU+RPSBpj2NH2KqWePXYBb0uxPWAOI"},{"iv":"Tdixl27FODiqHVrn","ct":"LZ/GJiCaYVgC/TuJMKypHFONxLPN+cQkzAmQIzB3l5puw0+LEb+RKFmb/NdYx+uurJ+97Pb/3z5l4nq3SA34wBwPSddGQvasjxW7+QsE2AiRXTmwiH+7vQHdfMhkNC+8ldflYs4c6Lb6UiooH79JAFuKL5yPK26TGOj8b/FbR95TRLg6rVtcNmzZz3QvKVFtTbMz+ochLQDGloJFjEa5rFBmT/fPlBFDqX31q3i+vHYyHoxaBpTwCnjExg4BAUyFt0EUrU4JR1TS+QoVEq7wWqryBQYnSGbkx+3AGKfgkl+m0A=="},{"iv":"7hMYCMIOW9LKn32C","ct":"8NXcdwtHl2djDDYuU2YDYhU13HeX7mbGOtk/YYcY3bsYWnYzJ7rktiWX9I5RImmANS0lnjselPmFr0SAxwn+wFanm0LSF9tQUBAdPh2R8CYpg3zd2P0QKGo9dMGXB2KOQf4fVtBVQLmqjRFgKSpkp7dO49GiU6yhLr7BlyVc7C8woNdIAGL7Q8E2t+iMWgNw3+beHhMdjVHTE7qrSRrDe8Wlr0eUhi7ogGdenZHCQ+6/mXxp4xPNKQ7rsDYMRcqhd0f22S5vGuRUqd8gv4OMwazOr/GOu9e3Eyfx1/Q="},{"iv":"eKSXxPW1byXIeSid","ct":"8HRaunmgzoPqmVy4OlkE+qBnGMnlS/R+RByXHNRVDX7gA751FYe0acegl+CGjnTkQdimahf512b3iiNxJi6zRm2NLhr2iMlZYRztEyMQD9gUhrJ+scpcyZad7IY9pvekd1FIMjqR6z2W8IpitBJCL9v8PTzyxo7I2wU5DCgpFMDouKThmz8BKWzIcMPPYlXdt7LcRlQPAB75olizAj7mtasi0MH/cJW2wEFY7nIARsM/1afWmIfY6ISW"},{"iv":"yTEDez6Q1M9yV92y","ct":"9fUy/s0hZix1Bnwt2/+vJYA3mGygqYYiuwluqDXu3EAjdac3V0z8JUFNEj4Z05zINyY6pqbqUljdGoEKpZPh8ZsJdBuZqbi8tI7Qxv6MKDbSz283dGN6gkETxesunOOUozCuGuxANQQ2dVJar/DIFhpc4jbNcrbpNcIK8TxubPG29mUWJKmC2/e3fvPiQ/jd+dlKGIjISc8UDjYvsv7IvOvNijaZdj9ka2LolqA6TpVpNR4LXlL+NdLm81mq9ax4BoeIpnpUzBl8w2hI2iDjUsyA7DfYiRj0oh0="},{"iv":"P9KdUTKX9sk6SNCw","ct":"rqE+pAoippGt1g9117IpBVKSlJwpsJCEEvMpXz/dhX723gzD/IP029vBFLSehcneqY4XNNMPb3ROVe6+F8+0CzmyVN3reFtkLWVzUlTqkt8/SLaU9l/gIS/Uq/IwVLF+TlQHmPIt2uE1TCE5ZSVM5D64AMAzp2Pi3UMS+XM7HgxXaNUkH+6bhBaz0o3rqGSMFP5HQmUZ/3XYa+xl97aH2JB6VFdaGW3owGbrMSYp88sI3BYynSkuNVFPDBGdpNw1Y/RggzfjvdMMRv3NoSYGY8W5Bs5+7haXS34VnPUcMcI="},{"iv":"c6620I6O/v938tGE","ct":"mz+U428bS9LcuQgQcqzJiMNjqOlHceI4gnBl3sAkXTdekNm5JZ0oRKIPy6tQwm4CJ1KF9RCRP+fa8m914HJfsxrPFrfx0n+UQn5p9735aTBxerKCorXN2ppkWIK0ImFt5NXhOoQyhqe7k6om7a8+uwieqd5NLlUbfafY+1ucwyxUQhv5+4PetiE2o5udGR/aysmZzO+rmuuBq34mYXeLhCEGYLBy210h1BuooSvxlOxGfwXETlChtXRcDb4+QaFpeX/JFBHNZFUu0pNMNTzewBIhQTvZPjtFlpxv"}]};</script>
 <script>
 /* ดึงไฟล์ล่าสุดจาก Google Drive อัตโนมัติ (ผ่านตัวเชื่อม Google Drive ของ claude.ai)
  *
@@ -1863,7 +1865,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   // ---------- ค่าตั้งต้นที่เข้ารหัสด้วย PIN (ฝังในเว็บฉบับสาธารณะ: window.PALLET_LOCK จาก tools/make-lock.js) ----------
   function lockInfo() {
     var L = G().PALLET_LOCK;
-    return L && L.v === 1 && L.salt && L.iv && L.ct && L.iter > 0 ? L : null;
+    return L && (L.v === 1 || (L.v === 2 && Array.isArray(L.keys))) && L.salt && L.iv && L.ct && L.iter > 0 ? L : null;
   }
   /** lock ของหน้านี้มีค่าของส่วน name ไหม (เช่น 'stock') */
   var LOCK_STORE = 'pallet-check:lock-id';
@@ -1885,24 +1887,46 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return String(v == null ? '' : v).replace(/[๐-๙]/g, function (c) { return String(c.charCodeAt(0) - 0x0E50); })
       .replace(/[ๅ\/\-ภถุึคตจ]/g, function (c) { return TH_KEYS[c]; }).replace(/\s+/g, '');
   }
-  /** ถอดรหัสค่าตั้งต้นด้วย PIN → เก็บในเครื่อง · คืน Promise<true|false> (false = PIN ผิด/ถอดไม่ได้) */
-  function unlock(pin) {
+  var USER_STORE = 'pallet-check:user';
+  /** ถอดรหัสด้วย PIN/รหัสพนักงาน → Promise<{ cfg: ข้อความค่าตั้งต้น, user: {n ชื่อ, r 'manager'|'lead', d แผนก, p ตำแหน่ง} } | null> (ไม่เก็บอะไร) */
+  function openLock(pin) {
     var g = G(), L = lockInfo();
-    if (!L || !g.crypto || !g.crypto.subtle || !normPin(pin)) return Promise.resolve(false);
-    var enc = new TextEncoder(), sub = g.crypto.subtle;
+    if (!L || !g.crypto || !g.crypto.subtle || !normPin(pin)) return Promise.resolve(null);
+    var enc = new TextEncoder(), dec = new TextDecoder(), sub = g.crypto.subtle;
     return sub.importKey('raw', enc.encode(normPin(pin)), 'PBKDF2', false, ['deriveKey']).then(function (base) {
       return sub.deriveKey({ name: 'PBKDF2', salt: b64Bytes(L.salt), iterations: L.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     }).then(function (key) {
-      return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(L.iv) }, key, b64Bytes(L.ct));
-    }).then(function (buf) {
-      var ok = saveCfg(new TextDecoder().decode(buf));
-      if (ok) { try { g.localStorage.setItem(LOCK_STORE, lockId()); } catch (e) { /* ไม่เป็นไร */ } }
-      return ok;
-    }).catch(function () { return false; });
+      if (L.v === 1) return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(L.iv) }, key, b64Bytes(L.ct)).then(function (buf) { return { cfg: dec.decode(buf), user: { n: '', r: 'manager', d: '', p: '' } }; });
+      // v2: ลองห่อกุญแจทีละช่อง (ช่องที่ไม่ใช่ของรหัสนี้ถอดไม่ได้) → ได้กุญแจ K → ถอดค่าตั้งต้น
+      var i = 0;
+      var next = function () {
+        if (i >= L.keys.length) return Promise.reject(new Error('no match'));
+        var e = L.keys[i++];
+        return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(e.iv) }, key, b64Bytes(e.ct)).then(function (buf) { return JSON.parse(dec.decode(buf)); }, next);
+      };
+      return next().then(function (u) {
+        return sub.importKey('raw', b64Bytes(u.k), 'AES-GCM', false, ['decrypt']).then(function (K) {
+          return sub.decrypt({ name: 'AES-GCM', iv: b64Bytes(L.iv) }, K, b64Bytes(L.ct));
+        }).then(function (buf) { return { cfg: dec.decode(buf), user: { n: u.n || '', r: u.r === 'manager' ? 'manager' : 'lead', d: u.d || '', p: u.p || '' } }; });
+      });
+    }).catch(function () { return null; });
   }
+  /** ถอดรหัสค่าตั้งต้นด้วย PIN/รหัสพนักงาน → เก็บในเครื่อง (พร้อมว่าใครเข้าใช้) · คืน Promise<true|false> */
+  function unlock(pin) {
+    var g = G();
+    return openLock(pin).then(function (o) {
+      if (!o || !saveCfg(o.cfg)) return false;
+      try { g.localStorage.setItem(LOCK_STORE, lockId()); g.localStorage.setItem(USER_STORE, JSON.stringify(o.user)); } catch (e) { /* ไม่เป็นไร */ }
+      return true;
+    });
+  }
+  /** ตรวจรหัสโดยไม่เปลี่ยนค่าในเครื่อง → Promise<user|null> (ใช้ยืนยันสิทธิ์ผู้จัดการตอนบันทึกรายงาน) */
+  function verify(pin) { return openLock(pin).then(function (o) { return o ? o.user : null; }); }
+  /** ผู้ที่ปลดล็อกเบราว์เซอร์นี้ ({n, r, d, p}) หรือ null */
+  function user() { try { var u = JSON.parse(G().localStorage.getItem(USER_STORE) || 'null'); return u && u.r ? u : null; } catch (e) { return null; } }
   /** true = เปิดเป็นเว็บทั่วไป (http/https) ที่ดึง Drive ได้ถ้ามีค่าตั้งต้น — ใช้ตัดสินว่าจะชวนให้ตั้งค่าหรือไม่ */
   function webCapable() { var loc = G().location; return !!(loc && /^https?:$/.test(loc.protocol)); }
-  function resetWeb() { try { G().localStorage.removeItem(CFG_STORE); } catch (e) { /* ไม่มีที่เก็บ */ } }
+  function resetWeb() { try { G().localStorage.removeItem(CFG_STORE); G().localStorage.removeItem(USER_STORE); } catch (e) { /* ไม่มีที่เก็บ */ } }
 
   // ---------- เลือกไฟล์ "ตั้งแต่วันที่ ... เป็นต้นมา" ----------
   var TH_MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -2130,7 +2154,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   var api = { SOURCES: SOURCES, SERVER: SERVER, TOOLS: TOOLS, mode: null, available: available, pull: pull, explain: explain, unwrap: unwrap, b64ToBuffer: b64ToBuffer,
-    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, stockCfg: stockCfg, hasLock: hasLock, lockHas: lockHas, unlock: unlock, normPin: normPin, lockId: lockId, lockStale: lockStale, pickFiles: pickFiles, fileMonth: fileMonth,
+    parseCfg: parseCfg, webConfig: webConfig, resetWeb: resetWeb, saveCfg: saveCfg, webCapable: webCapable, stockCfg: stockCfg, hasLock: hasLock, lockHas: lockHas, unlock: unlock, verify: verify, user: user, normPin: normPin, lockId: lockId, lockStale: lockStale, pickFiles: pickFiles, fileMonth: fileMonth,
     _reset: function () { mcpPromise = null; api.mode = null; } };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.PalletDrive = api;
@@ -2825,14 +2849,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var msg = h('p', { class: 'rep-msg', role: 'status' });
     var pin = h('input', { type: 'password', inputmode: 'numeric', autocomplete: 'off', id: 'rep-pin', placeholder: 'PIN ผู้จัดการ' });
     var by = h('input', { type: 'text', id: 'rep-by', maxlength: '60', placeholder: 'ชื่อผู้บันทึก' });
-    try { by.value = localStorage.getItem('pallet-check:stock-by') || ''; } catch (e) { /* ไม่เป็นไร */ }
+    var me = PD.user && PD.user(), isMgr = !!(me && me.r === 'manager');      // ผู้จัดการที่เข้าใช้เครื่องนี้อยู่แล้ว ไม่ต้องใส่ PIN ซ้ำ
+    by.value = isMgr ? whoName(me) : ''; try { by.value = by.value || localStorage.getItem('pallet-check:stock-by') || ''; } catch (e) { /* ไม่เป็นไร */ }
     var btn = h('button', { type: 'submit', class: 'btn primary', text: done ? 'บันทึกทับรายงานสัปดาห์นี้' : 'บันทึกรายงานสัปดาห์นี้' });
     var form = h('form', { class: 'rep-save-form', onsubmit: function (ev) {
       ev.preventDefault(); if (repState.busy) return;
-      if (!pin.value.trim()) { msg.textContent = 'ใส่ PIN ผู้จัดการก่อน'; pin.focus(); return; }
-      repState.busy = true; btn.disabled = true; msg.textContent = 'กำลังตรวจ PIN…';
-      PD.unlock(pin.value).then(function (ok) {
-        if (!ok) throw Object.assign(new Error('pin'), { code: 'pin' });
+      if (!isMgr && !pin.value.trim()) { msg.textContent = 'ใส่ PIN ผู้จัดการก่อน'; pin.focus(); return; }
+      repState.busy = true; btn.disabled = true; msg.textContent = isMgr ? 'กำลังบันทึก…' : 'กำลังตรวจ PIN…';
+      (isMgr ? Promise.resolve(me) : PD.verify(pin.value)).then(function (u) {
+        if (!u || u.r !== 'manager') throw Object.assign(new Error('pin'), { code: 'pin' });
         msg.textContent = 'กำลังบันทึก…';
         try { localStorage.setItem('pallet-check:stock-by', by.value.trim()); } catch (e) { /* ไม่เป็นไร */ }
         var data = { outRange: rep.ro, inRange: rep.ri, out: rep.out, inMatch: rep.inn, inOther: rep.notCount, inAll: rep.allIn, diff: rep.diff,
@@ -2844,9 +2869,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         repState.busy = false; stockApply(d);
         var m = document.querySelector('#report-box .rep-save .rep-msg'); if (m) m.textContent = 'บันทึกรายงานแล้ว ' + fmtClock(new Date()) + ' — สัปดาห์ ' + core.fmtDate(wk);
       }).catch(function (e) {
-        msg.textContent = e && e.code === 'pin' ? 'PIN ไม่ถูกต้อง — ลองใหม่อีกครั้ง' : stockErr(e && e.code);
+        msg.textContent = e && e.code === 'pin' ? 'PIN ไม่ถูกต้อง — เฉพาะผู้จัดการบันทึกรายงานได้' : stockErr(e && e.code);
       }).then(function () { repState.busy = false; btn.disabled = false; });
-    } }, h('label', null, 'PIN ผู้จัดการ', pin), h('label', null, 'ผู้บันทึก', by), btn);
+    } }, isMgr ? null : h('label', null, 'PIN ผู้จัดการ', pin), h('label', null, 'ผู้บันทึก', by), btn);
     var wrap = h('div', { class: 'rep-save' },
       h('h4', { text: 'บันทึกรายงานประจำสัปดาห์ (ผู้จัดการกดสัปดาห์ละครั้ง)' }),
       h('p', { class: 'hint', text: 'สัปดาห์ ' + weekText(wk) + ' — ' + (done ? 'บันทึกแล้วโดย ' + (done.savedBy || '–') + (done.savedAt ? ' · ' + fmtStamp(done.savedAt) : '') + ' (กดอีกครั้ง = แทนที่ด้วยตัวเลขล่าสุด)' : 'ยังไม่ได้บันทึก') + ' · เก็บไว้ใน Google Sheet แผ่น “ยอดรายสัปดาห์” ช่องหมายเหตุ' }),
@@ -3733,7 +3758,19 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       state.driveNote = 'ดึงจาก Drive ไม่สำเร็จ'; state.driveBad = 1;
     }).then(function () { driveBusy = false; $('#btn-drive').disabled = false; syncInputs(); });
   }
+  function whoName(u) { return u ? (u.n || 'ผู้จัดการ') + (u.d ? ' (' + u.d + ')' : '') : ''; }
+  function showWho() {
+    var PD = window.PalletDrive, u = PD && PD.user && PD.user(), el = $('#who');
+    if (!el || !u) return;
+    el.hidden = false; clear(el);
+    el.appendChild(h('span', null, '👤 เข้าใช้โดย ', h('b', { text: u.n || 'ผู้จัดการ' }), ' · ' + [u.p || (u.r === 'manager' ? 'ผู้จัดการ' : ''), u.d].filter(Boolean).join(' ')));
+    el.appendChild(h('button', { type: 'button', class: 'btn link', text: 'ออกจากระบบ', onclick: function () {
+      if (!confirm('ออกจากระบบในเครื่องนี้? ต้องใส่รหัสพนักงานใหม่ครั้งหน้า')) return;
+      PD.resetWeb(); try { localStorage.removeItem('pallet-check:lock-id'); } catch (e) { /* ไม่เป็นไร */ } location.reload();
+    } }));
+  }
   if (window.PalletDrive) {
+    showWho();
     window.PalletDrive.available().then(function (ok) {
       if (!ok) {                             // ไม่มีตัวเชื่อม/ค่าตั้งต้น → เลือกไฟล์เองได้ตามเดิม
         if (window.PalletDrive.webCapable && window.PalletDrive.webCapable()) {      // เว็บทั่วไปที่ยังไม่มีค่าตั้งต้นในเบราว์เซอร์นี้ → บอกสาเหตุและให้ตั้งค่า
@@ -3742,10 +3779,10 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
             $('#setup-pin').hidden = false; $('#setup-linkbox').open = false;
             $('#pin-form').addEventListener('submit', function (e) {
               e.preventDefault();
-              var btn = $('#btn-pin'); btn.disabled = true; $('#setup-msg').textContent = 'กำลังตรวจ PIN…';
+              var btn = $('#btn-pin'); btn.disabled = true; $('#setup-msg').textContent = 'กำลังตรวจรหัส…';
               window.PalletDrive.unlock($('#setup-pin-input').value).then(function (ok) {
                 if (ok) { location.reload(); return; }
-                btn.disabled = false; $('#setup-msg').textContent = 'PIN ไม่ถูกต้อง — ลองใหม่อีกครั้ง (ถ้าเพิ่งเปลี่ยน PIN ให้กด Ctrl + F5 เพื่อโหลดหน้าใหม่ก่อน)'; $('#setup-pin-input').select();
+                btn.disabled = false; $('#setup-msg').textContent = 'รหัสไม่ถูกต้อง หรือไม่ใช่หัวหน้าแผนก/หัวหน้าทีม — ลองใหม่อีกครั้ง (ถ้าเพิ่งได้รับสิทธิ์ ให้กด Ctrl + F5 ก่อน)'; $('#setup-pin-input').select();
               });
             });
             $('#setup-pin-input').addEventListener('input', function (e) { var v = window.PalletDrive.normPin(e.target.value); if (v !== e.target.value) e.target.value = v; });   // แป้นไทย/เลขไทย → ตัวเลข
@@ -3880,7 +3917,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     $('#stock').hidden = false; $('#stock-form').hidden = false;
     var t = new Date(), today = t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2);
     $('#stock-week').value = today;
-    try { $('#stock-by').value = localStorage.getItem('pallet-check:stock-by') || ''; } catch (e) { /* ไม่เป็นไร */ }
+    try { $('#stock-by').value = localStorage.getItem('pallet-check:stock-by') || whoName(PD.user && PD.user()); } catch (e) { /* ไม่เป็นไร */ }
     $('#stock-week').addEventListener('change', function () { stockFill(); stockHist(); });
     STOCK_F.forEach(function (f) { $('#st-' + f).addEventListener('input', stockTotal); });
     $('#stock-form').addEventListener('submit', stockSave);
