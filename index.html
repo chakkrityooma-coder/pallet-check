@@ -2876,86 +2876,127 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     return r && STOCK_F.some(function (f) { return r[f] != null; }) ? r : null;
   }
   function drawReport(rep) {
-    var W = 1000, S = 2, PAD = 36, FONT = 'system-ui,"Segoe UI","Noto Sans Thai","Leelawadee UI",Tahoma,sans-serif';
-    var cv = document.createElement('canvas'), x = cv.getContext('2d');
-    var C = { ink: '#14231b', mut: '#566860', line: '#d6e0da', head: '#eef4f0', green: '#0f5b37', red: '#a3341b', amber: '#8a5a00', blue: '#1d4f91', purple: '#5b2d91', okbg: '#e6f6ec', badbg: '#fdecea' };
-    var f = function (sz, b) { return (b ? '700 ' : '400 ') + sz + 'px ' + FONT; };
-    var wrap = function (t, w, font) {
-      x.font = font; var out = [], line = '';
-      String(t).split(' ').forEach(function (wd) {
-        var tr = line ? line + ' ' + wd : wd;
-        if (x.measureText(tr).width <= w || !line) line = tr; else { out.push(line); line = wd; }
+    var W = 1080, S = 2, P = 40, FONT = 'system-ui,"Segoe UI","Noto Sans Thai","Leelawadee UI",Tahoma,sans-serif';
+    var C = { ink: '#14231b', mut: '#5f6f67', soft: '#8a9a92', line: '#e3e9e5', bg: '#f4f7f5', card: '#ffffff',
+      brand: '#0f5b37', brand2: '#1f7a4d', in1: '#1f7a4d', in2: '#7cc49a', outBar: '#3d4a44',
+      red: '#c0392b', redBg: '#fdecea', amber: '#b26a00', amberBg: '#fff4e0', purple: '#6a3fb0', purpleBg: '#f1ebfb', greenBg: '#e7f5ec' };
+    var cv = document.createElement('canvas'), x = cv.getContext('2d'), ops = [], y = 0;
+    var f = function (sz, w) { return (w || 400) + ' ' + sz + 'px ' + FONT; };
+    var T = function (t, xx, yy, sz, color, o) {
+      o = o || {}; ops.push(function () { x.font = f(sz, o.w); x.fillStyle = color; x.textAlign = o.a || 'left'; x.textBaseline = o.b || 'alphabetic'; x.fillText(t, xx, yy); });
+    };
+    var tw = function (t, sz, w) { x.font = f(sz, w); return x.measureText(t).width; };
+    var RR = function (xx, yy, w, hh, r, fill, stroke) {
+      ops.push(function () {
+        x.beginPath(); x.moveTo(xx + r, yy); x.arcTo(xx + w, yy, xx + w, yy + hh, r); x.arcTo(xx + w, yy + hh, xx, yy + hh, r);
+        x.arcTo(xx, yy + hh, xx, yy, r); x.arcTo(xx, yy, xx + w, yy, r); x.closePath();
+        if (fill) { x.fillStyle = fill; x.fill(); } if (stroke) { x.strokeStyle = stroke; x.lineWidth = 1.5; x.stroke(); }
       });
-      if (line) out.push(line); return out;
     };
-    // ตาราง: cols = [{w, align}], rows = [{cells:[{t, b, c}], bg}]
-    var ops = [], y = PAD;
-    var text = function (t, xx, yy, font, color, align) { ops.push(function () { x.font = font; x.fillStyle = color; x.textAlign = align || 'left'; x.textBaseline = 'top'; x.fillText(t, xx, yy); }); };
-    var rect = function (xx, yy, w, hh, fill, stroke) { ops.push(function () { if (fill) { x.fillStyle = fill; x.fillRect(xx, yy, w, hh); } if (stroke) { x.strokeStyle = stroke; x.lineWidth = 1; x.strokeRect(xx + .5, yy + .5, w - 1, hh - 1); } }); };
-    var table = function (cols, head, rows) {
-      var all = [{ cells: head.map(function (t) { return { t: t, b: true, c: C.mut, sz: 14 }; }), bg: C.head }].concat(rows);
-      all.forEach(function (r) {
-        var lines = r.cells.map(function (cl, i) { return wrap(cl.t, cols[i].w - 20, f(cl.sz || 16, cl.b)); });
-        var lh = function (cl) { return Math.round((cl.sz || 16) * 1.5); };
-        var hh = Math.max.apply(null, lines.map(function (L, i) { return L.length * lh(r.cells[i]); })) + 16;
-        rect(PAD, y, W - 2 * PAD, hh, r.bg || null, null);
-        var xx = PAD;
-        r.cells.forEach(function (cl, i) {
-          var col = cols[i], tx = col.align === 'right' ? xx + col.w - 10 : xx + 10;
-          lines[i].forEach(function (L, k) { text(L, tx, y + 8 + k * lh(cl) + ((cl.sz || 16) >= 20 ? -2 : 0), f(cl.sz || 16, cl.b), cl.c || C.ink, col.align); });
-          xx += col.w;
-        });
-        ops.push((function (yy) { return function () { x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.moveTo(PAD, yy + .5); x.lineTo(W - PAD, yy + .5); x.stroke(); }; })(y + hh));
-        y += hh;
+    var pill = function (t, xx, yy, color, bg) { var w = tw(t, 14, 700) + 20; RR(xx, yy, w, 26, 13, bg); T(t, xx + 10, yy + 18, 14, color, { w: 700 }); return w; };
+    var big = function (num, unit, xx, yy, sz, color, pre) {      // ตัวเลขใหญ่ + หน่วยเล็ก ต่อท้าย
+      var cx = xx;
+      if (pre) { T(pre, cx, yy, Math.round(sz * .45), color, { w: 700 }); cx += tw(pre, Math.round(sz * .45), 700) + 8; }
+      T(num, cx, yy, sz, color, { w: 800 }); cx += tw(num, sz, 800) + 8;
+      T(unit, cx, yy, 18, C.mut);
+    };
+    var secTitle = function (t, sub) { T(t, P, y + 26, 24, C.ink, { w: 800 }); y += 38; if (sub) { T(sub, P, y + 16, 15, C.mut); y += 26; } y += 12; };
+    var now = new Date(), stamp = core.fmtDate(iso(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())))) + ' ' + fmtClock(now);
+
+    // ===== หัวรายงาน =====
+    ops.push(function () { var g = x.createLinearGradient(0, 0, W, 0); g.addColorStop(0, C.brand); g.addColorStop(1, C.brand2); x.fillStyle = g; x.fillRect(0, 0, W, 132); });
+    T('รายงานตรวจยอดพาเลท', P, 58, 34, '#ffffff', { w: 800 });
+    T('ภาคจ่ายปล่อยออก ↔ รับภูมิภาครับกลับเข้า', P, 92, 18, 'rgba(255,255,255,.85)');
+    T('ขาออก ' + rep.ro + '   ·   ขารับ ' + rep.ri, P, 118, 15, 'rgba(255,255,255,.75)');
+    T('ออกรายงาน', W - P, 58, 15, 'rgba(255,255,255,.75)', { a: 'right' });
+    T(stamp, W - P, 84, 20, '#ffffff', { a: 'right', w: 700 });
+    y = 132 + 28;
+    if (rep.missing.length) { RR(P, y, W - 2 * P, 40, 10, C.redBg); T('⚠ ไม่มีข้อมูลภาคจ่าย' + rep.missing.join(' / ') + ' — ตัวเลขยังไม่ครบ', P + 16, y + 26, 16, C.red, { w: 700 }); y += 56; }
+
+    // ===== 1) ตัวเลขหลัก 3 ช่อง =====
+    secTitle('ภาพรวมพาเลท', 'นับทุกคันรวมกัน — ตอบว่า “พาเลทที่ปล่อยออก กลับเข้ามาครบไหม”');
+    var gap = 30, cw = (W - 2 * P - 2 * gap) / 3, ch = 150;
+    var dCol = rep.diff > 0 ? C.red : rep.diff < 0 ? C.amber : C.brand, dBg = rep.diff > 0 ? C.redBg : rep.diff < 0 ? C.amberBg : C.greenBg;
+    var tiles = [
+      { lab: 'ปล่อยออก', n: fmt(rep.out), col: C.ink, bg: C.card, st: C.line, sub: fmt(rep.tOut) + ' เที่ยว · ตั้งแต่ ' + rep.from },
+      { lab: 'รับกลับเข้า (ทุกคัน)', n: fmt(rep.allIn), col: C.brand, bg: C.greenBg, sub: 'ตรงรหัส ' + fmt(rep.inn) + ' + ไม่ตรงรหัส ' + fmt(rep.notCount) },
+      { lab: 'ผลต่าง', n: fmt(rep.diffAbs), pre: rep.diff ? rep.diffWord : 'ครบ', col: dCol, bg: dBg,
+        sub: rep.diff > 0 ? 'รับกลับน้อยกว่าที่ปล่อยออก' : rep.diff < 0 ? 'รับกลับมากกว่าที่ปล่อยออก' : 'รับกลับเท่ากับที่ปล่อยออก' }
+    ];
+    tiles.forEach(function (t, i) {
+      var xx = P + i * (cw + gap);
+      RR(xx, y, cw, ch, 16, t.bg, t.st);
+      T(t.lab, xx + 22, y + 36, 18, C.mut, { w: 700 });
+      big(t.n, 'พาเลท', xx + 22, y + 100, 56, t.col, t.pre);
+      T(t.sub, xx + 22, y + 132, 14, C.mut);
+      if (i < 2) T(i === 0 ? '−' : '=', xx + cw + gap / 2, y + ch / 2 + 10, 26, C.soft, { a: 'center', w: 700 });
+    });
+    y += ch + 26;
+
+    // ===== แท่งเทียบ ปล่อยออก vs รับกลับ =====
+    var bx = P + 150, bw = W - 2 * P - 150 - 90, bh = 30, mx = Math.max(rep.out, rep.allIn, 1);
+    var bar = function (lab, parts, total) {
+      T(lab, P, y + 21, 16, C.ink, { w: 700 });
+      RR(bx, y, bw, bh, 8, C.bg);
+      var cx = bx;
+      parts.forEach(function (pt, k) {
+        var w = Math.max(0, bw * pt.v / mx); if (w < 1) return;
+        var last = k === parts.length - 1;
+        ops.push((function (x0, w0, col, isFirst, isLast) { return function () {
+          x.save(); x.beginPath(); x.rect(bx, y0, bw, bh); x.clip();
+          x.beginPath(); var r = 8, L = isFirst ? r : 0, R = isLast ? r : 0;
+          x.moveTo(x0 + L, y0); x.lineTo(x0 + w0 - R, y0); if (R) x.arcTo(x0 + w0, y0, x0 + w0, y0 + R, R); x.lineTo(x0 + w0, y0 + bh - R); if (R) x.arcTo(x0 + w0, y0 + bh, x0 + w0 - R, y0 + bh, R);
+          x.lineTo(x0 + L, y0 + bh); if (L) x.arcTo(x0, y0 + bh, x0, y0 + bh - L, L); x.lineTo(x0, y0 + L); if (L) x.arcTo(x0, y0, x0 + L, y0, L); x.closePath();
+          x.fillStyle = col; x.fill(); x.restore(); }; })(cx, w, pt.c, k === 0, last));
+        var y0 = y;
+        if (w > tw(pt.t, 13, 700) + 16) T(pt.t, cx + w / 2, y + 20, 13, pt.tc || '#fff', { a: 'center', w: 700 });
+        cx += w;
       });
-      y += 10;
+      T(fmt(total), bx + bw + 12, y + 22, 20, C.ink, { w: 800 });
+      y += bh + 14;
     };
-    var heading = function (t, sub) {
-      text(t, PAD, y, f(20, true), C.ink); y += 32;
-      if (sub) { wrap(sub, W - 2 * PAD, f(14)).forEach(function (L) { text(L, PAD, y, f(14), C.mut); y += 21; }); }
-      y += 6;
-    };
-    var now = new Date();
-    text('รายงานตรวจยอดพาเลท  ขาออก ↔ ขารับ', PAD, y, f(26, true), C.green); y += 40;
-    text('ขาออก (ภาคจ่ายปล่อยรถ) ' + rep.ro + '   ·   ขารับ (รับภูมิภาค) ' + rep.ri, PAD, y, f(15), C.mut); y += 24;
-    text('ออกรายงาน ' + core.fmtDate(iso(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())))) + ' ' + fmtClock(now), PAD, y, f(15), C.mut); y += 24;
-    if (rep.missing.length) { text('⚠ ไม่มีข้อมูลภาคจ่าย' + rep.missing.join(' / ') + ' — ตัวเลขยังไม่ครบ', PAD, y, f(15, true), C.red); y += 24; }
-    y += 14;
-    // ส่วนที่ 1
-    heading('1. ภาพรวมพาเลท (นับทุกคันรวมกัน)', 'ตอบว่า “พาเลทที่ปล่อยออก กลับเข้ามาครบไหม” ไม่สนว่ากลับมากับรถคันไหน');
-    var cols1 = [{ w: 330 }, { w: 150, align: 'right' }, { w: 100, align: 'right' }, { w: W - 2 * PAD - 580 }];
-    var dc = rep.diff > 0 ? C.red : rep.diff < 0 ? C.amber : C.green;
-    table(cols1, ['รายการ', 'พาเลท', 'เที่ยว', 'หมายเหตุ'], [
-      { cells: [{ t: 'ปล่อยออก (ภาคจ่าย 5 ภาค)', b: true }, { t: fmt(rep.out), b: true }, { t: fmt(rep.tOut) }, { t: 'ตั้งแต่ ' + rep.from + ' (เฉพาะเที่ยวที่ลงพาเลท)', c: C.mut, sz: 14 }] },
-      { cells: [{ t: 'รับเข้า — ตรงรหัสปล่อยรถ' }, { t: fmt(rep.inn) }, { t: fmt(rep.tA) }, { t: 'กลับมากับรถคันเดิมที่ปล่อยออก', c: C.mut, sz: 14 }] },
-      { cells: [{ t: '+ รับเข้า — ไม่ตรงรหัสปล่อยรถ' }, { t: fmt(rep.notCount) }, { t: '–' }, { t: 'กลับมากับรถคันอื่น: รถของเที่ยวที่ปล่อยพาเลท 0 = ' + fmt(rep.skipIn) + ' · ปล่อยก่อน ' + rep.from + '/ทะเบียนไม่ตรง = ' + fmt(rep.orphAll), c: C.mut, sz: 14 }] },
-      { cells: [{ t: '= รวมรับกลับเข้า', b: true }, { t: fmt(rep.allIn), b: true }, { t: '' }, { t: fmt(rep.inn) + ' + ' + fmt(rep.notCount) + ' · รับภูมิภาครับเข้า ตั้งแต่ ' + rep.inFrom, c: C.mut, sz: 14 }], bg: C.okbg },
-      { cells: [{ t: 'ผลต่าง (Diff)', b: true, sz: 20 }, { t: (rep.diff ? rep.diffWord + ' ' : '') + fmt(rep.diffAbs), b: true, sz: 20, c: dc }, { t: '' }, { t: fmt(rep.out) + ' − ' + fmt(rep.allIn) + ' = ' + rep.diffWord + (rep.diff ? ' ' + fmt(rep.diffAbs) : ''), c: C.mut, sz: 14 }], bg: rep.diff > 0 ? C.badbg : null }
-    ]);
-    y += 16;
-    // ส่วนที่ 2
-    heading('2. ติดตามรายคัน (รถที่ปล่อยไป ยังไม่มีบันทึกรับเข้าของคันนั้น)', 'รวม ' + fmt(rep.nbPal) + ' พาเลท · ' + fmt(rep.nbTrips) + ' เที่ยว — ไม่ได้แปลว่าพาเลทหาย เพราะพาเลทอาจกลับมากับรถคันอื่นแล้ว (นับอยู่ใน “รวมรับกลับเข้า” ข้างบน)');
-    var tagC = { 'ต้องตาม': C.red, 'ให้ตรวจบันทึก': C.amber, 'ปกติ': C.purple };
-    table(cols1, ['กลุ่ม', 'พาเลท', 'เที่ยว', 'ต้องทำ'], rep.nb.map(function (u) {
-      return { cells: [{ t: u.tag + ' : ' + u.label, b: true, c: tagC[u.tag] || C.ink }, { t: fmt(u.pal), b: true }, { t: fmt(u.trips) }, { t: u.todo, c: C.mut, sz: 14 }] };
-    }).concat([{ cells: [{ t: 'รวม', b: true }, { t: fmt(rep.nbPal), b: true }, { t: fmt(rep.nbTrips), b: true }, { t: '' }], bg: C.head }]));
-    // ส่วนที่ 3: ยอดคงคลังสัปดาห์ล่าสุด (ถ้ามี)
+    bar('ปล่อยออก', [{ v: rep.out, c: C.outBar, t: fmt(rep.out) }], rep.out);
+    bar('รับกลับเข้า', [{ v: rep.inn, c: C.in1, t: 'ตรงรหัส ' + fmt(rep.inn) }, { v: rep.notCount, c: C.in2, t: 'ไม่ตรงรหัส ' + fmt(rep.notCount), tc: C.ink }], rep.allIn);
+    T('ไม่ตรงรหัส = กลับมากับรถคันอื่น (รถของเที่ยวที่ปล่อยพาเลท 0: ' + fmt(rep.skipIn) + ' · ปล่อยก่อน ' + rep.from + '/ทะเบียนไม่ตรง: ' + fmt(rep.orphAll) + ')', bx, y + 8, 13, C.mut);
+    y += 40;
+
+    // ===== 2) ติดตามรายคัน =====
+    ops.push((function (yy) { return function () { x.fillStyle = C.line; x.fillRect(P, yy, W - 2 * P, 1); }; })(y)); y += 24;
+    secTitle('ติดตามรายคัน', 'รถที่ปล่อยไป ยังไม่มีบันทึกรับเข้าของคันนั้น — รวม ' + fmt(rep.nbPal) + ' พาเลท · ' + fmt(rep.nbTrips) + ' เที่ยว (ไม่ได้แปลว่าพาเลทหาย อาจกลับมากับรถคันอื่นแล้ว)');
+    var NBC = [[C.red, C.redBg], [C.amber, C.amberBg], [C.purple, C.purpleBg]], nh = 160;
+    rep.nb.forEach(function (u, i) {
+      var xx = P + i * (cw + gap), col = NBC[i][0];
+      RR(xx, y, cw, nh, 16, NBC[i][1]);
+      ops.push((function (x0, y1) { return function () { x.fillStyle = col; x.fillRect(x0, y1 + 14, 5, nh - 28); }; })(xx, y));
+      pill(u.tag, xx + 22, y + 16, '#fff', col);
+      T(u.label, xx + 22, y + 66, 17, C.ink, { w: 700 });
+      big(fmt(u.pal), 'พาเลท · ' + fmt(u.trips) + ' เที่ยว', xx + 22, y + 116, 44, col);
+      T('→ ' + u.todo, xx + 22, y + 144, 14, col, { w: 700 });
+    });
+    y += nh + 30;
+
+    // ===== 3) ยอดพาเลทคงคลัง (ถ้ามี) =====
     var st = latestStock();
     if (st) {
-      y += 16;
-      heading('3. ยอดพาเลทคงคลัง (สัปดาห์ ' + weekText(st.week) + ')', st.updatedBy ? 'แก้ไขล่าสุด: ' + st.updatedBy + (st.updatedAt ? ' · ' + fmtStamp(st.updatedAt) : '') : '');
+      ops.push((function (yy) { return function () { x.fillStyle = C.line; x.fillRect(P, yy, W - 2 * P, 1); }; })(y)); y += 24;
+      secTitle('ยอดพาเลทคงคลัง', 'สัปดาห์ ' + weekText(st.week) + (st.updatedBy ? ' · แก้ไขล่าสุด ' + st.updatedBy : ''));
       var tot = 0; STOCK_F.forEach(function (k) { tot += st[k] || 0; });
-      var cw = (W - 2 * PAD) / 5, cols3 = [0, 1, 2, 3, 4].map(function () { return { w: cw, align: 'right' }; });
-      var v = function (k) { return st[k] == null ? '–' : fmt(st[k]); };
-      table(cols3, ['อีคอม คลัง 3', 'อีคอม คลัง 4', 'องค์กร คลัง 2', 'ภาคจ่าย หมุนเวียน', 'รวม'],
-        [{ cells: [{ t: v('ecom3'), sz: 20 }, { t: v('ecom4'), sz: 20 }, { t: v('org2'), sz: 20 }, { t: v('dispatch'), sz: 20 }, { t: fmt(tot), b: true, sz: 20 }] }]);
+      var SL = [['อีคอม', 'คลัง 3', st.ecom3], ['อีคอม', 'คลัง 4', st.ecom4], ['องค์กร', 'คลัง 2', st.org2], ['ภาคจ่าย', 'หมุนเวียน', st.dispatch], ['รวม', 'ทั้งหมด', tot]];
+      var sw = (W - 2 * P - 4 * 12) / 5, sh = 110;
+      SL.forEach(function (s2, i) {
+        var xx = P + i * (sw + 12), last = i === 4;
+        RR(xx, y, sw, sh, 14, last ? C.brand : C.card, last ? null : C.line);
+        T(s2[0], xx + 18, y + 30, 14, last ? 'rgba(255,255,255,.8)' : C.mut, { w: 700 });
+        T(s2[1], xx + 18, y + 52, 17, last ? '#fff' : C.ink, { w: 700 });
+        T(s2[2] == null ? '–' : fmt(s2[2]), xx + 18, y + 94, 34, last ? '#fff' : C.ink, { w: 800 });
+      });
+      y += sh + 30;
     }
-    y += 6;
-    text('ระบบตรวจยอดพาเลท · ภาคจ่าย ↔ รับภูมิภาค', PAD, y, f(13), C.mut); y += 20;
-    var H = y + PAD - 10;
-    cv.width = W * S; cv.height = H * S;
-    x.scale(S, S); x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
-    rect(0, 0, W, 8, C.green, null);
+    // ===== ท้ายรายงาน =====
+    T('ระบบตรวจยอดพาเลท · นับเฉพาะเที่ยวที่ภาคจ่ายลงพาเลท · รับเข้านับตั้งแต่ ' + rep.inFrom, P, y + 4, 13, C.soft);
+    var H = y + 30;
+    cv.width = W * S; cv.height = H * S; x.scale(S, S);
+    x.fillStyle = C.card; x.fillRect(0, 0, W, H);
     ops.forEach(function (op) { op(); });
     return cv;
   }
