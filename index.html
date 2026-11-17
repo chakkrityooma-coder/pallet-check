@@ -179,6 +179,8 @@ table.stab td.b { font-weight:800; }
 .rep-due.done { background:#e6f6ec; color:#0f5b37; }
 .rep-save { margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
 .rep-save h4 { margin:0 0 4px; font-size:1rem; }
+.line-st { margin:6px 0; padding:6px 10px; border-radius:8px; font-weight:600; font-size:.875rem; }
+.line-st.ok { background:var(--ok-bg); color:var(--ok); } .line-st.wait { background:var(--wait-bg); color:var(--wait); } .line-st.bad { background:var(--miss-bg); color:var(--miss); }
 .rep-save-form { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:flex-end; margin:8px 0; }
 .rep-save-form label { display:flex; flex-direction:column; font-size:.8125rem; color:var(--muted); gap:2px; }
 .rep-save-form input { padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); color:var(--text); font:inherit; width:12rem; max-width:100%; }
@@ -2808,21 +2810,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   }
 
   // ---------- รายงานแบบรูปภาพ (ตาราง ไม่ใช่การ์ด) — บันทึกเป็นรูป / คัดลอก / พิมพ์ ----------
+  var LINE_GROUP = 'คลังสำนักงานใหญ่';
   var reportOpen = false, repState = { box: null, rep: null, busy: false };
   function todayIso() { var t = new Date(); return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2); }
   // รายงานรายสัปดาห์เก็บเป็นข้อความในช่อง "หมายเหตุ" ของแถวสัปดาห์นั้น (แผ่น "ยอดรายสัปดาห์") — ใช้สคริปต์เดิมได้ ไม่ต้องแก้โค้ด Apps Script
   var REP_K = [['out', 'ปล่อยออก'], ['inMatch', 'รับตรงรหัส'], ['inOther', 'รับไม่ตรงรหัส'], ['inAll', 'รวมรับกลับ'], ['diff', 'ผลต่าง'],
     ['late', 'ต้องตาม'], ['again', 'ให้ตรวจบันทึก'], ['road', 'รถยังวิ่ง'], ['nbTrips', 'เที่ยวติดตาม']];
-  function repNote(d, by) {
+  // line = true → ขอส่งเข้า LINE: ต่อท้าย " · LINE รอส่ง <เวลา>" ให้งานส่งไลน์บนเครื่องผู้จัดการ (skills/tp-pallet-report) มารับไปส่ง แล้วเขียนสถานะกลับ
+  function repNote(d, by, line) {
     var dz = function (n) { return n > 0 ? 'ขาด ' + n : n < 0 ? 'เกิน ' + (-n) : 'ครบ 0'; };
+    var t = new Date(), tail = line ? ' · LINE รอส่ง ' + todayIso() + ' ' + fmtClock(t) : '';
     return ('รายงาน · ' + REP_K.map(function (k) { return k[1] + ' ' + (k[0] === 'diff' ? dz(d.diff) : String(d[k[0]])); }).join(' · ') +
-      ' · ขาออก ' + d.outRange + ' · โดย ' + (by || '–')).slice(0, 300);
+      ' · ขาออก ' + d.outRange + ' · โดย ' + (by || '–')).slice(0, 300 - tail.length) + tail;
   }
   function repParse(r) {
     var t = String(r.note || ''); if (t.indexOf('รายงาน · ') !== 0) return null;
     var o = { week: r.week, savedAt: r.updatedAt || '' };
     t.split(' · ').slice(1).forEach(function (part) {
       if (part.indexOf('โดย ') === 0) { o.savedBy = part.slice(4); return; }
+      var lm = /^LINE (รอส่ง|กำลังส่ง|ส่งแล้ว|ส่งไม่สำเร็จ)\s*(.*)$/.exec(part);
+      if (lm) { o.line = { s: lm[1], at: lm[2] }; return; }
       REP_K.forEach(function (k) {
         if (part.indexOf(k[1] + ' ') !== 0) return;
         var v = part.slice(k[1].length + 1), m = /^(ขาด|เกิน|ครบ) (-?[\d.]+)$/.exec(v);
@@ -2836,9 +2843,16 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function repDue() {
     var el = document.getElementById('rep-due'); if (!el) return;
     if (!stock.cfg || !stock.loaded) { el.hidden = true; return; }
-    var r = repSaved(mondayOf(todayIso()));
-    el.hidden = false; el.className = 'rep-due ' + (r ? 'done' : 'todo');
-    el.textContent = r ? '✓ บันทึกรายงานสัปดาห์นี้แล้ว' : '⚠ สัปดาห์นี้ยังไม่ได้บันทึกรายงาน';
+    var r = repSaved(mondayOf(todayIso())), ln = r && r.line;
+    el.hidden = false; el.className = 'rep-due ' + (r && (!ln || ln.s === 'ส่งแล้ว') ? 'done' : 'todo');
+    el.textContent = !r ? '⚠ สัปดาห์นี้ยังไม่ได้บันทึกรายงาน' : !ln ? '✓ บันทึกรายงานสัปดาห์นี้แล้ว'
+      : ln.s === 'ส่งแล้ว' ? '✓ ส่งเข้า LINE แล้ว' : ln.s === 'ส่งไม่สำเร็จ' ? '⚠ ส่ง LINE ไม่สำเร็จ' : '📨 รอส่งเข้า LINE';
+    linePoll(!!(ln && (ln.s === 'รอส่ง' || ln.s === 'กำลังส่ง')));
+  }
+  var lineTimer = null;      // ระหว่างรอส่ง LINE: โหลดสถานะใหม่ทุก 1 นาที
+  function linePoll(on) {
+    if (on && !lineTimer) lineTimer = setInterval(function () { if (!stock.busy) stockLoad(); }, 60000);
+    if (!on && lineTimer) { clearInterval(lineTimer); lineTimer = null; }
   }
   function repRefresh() {
     stock.loaded = true; repDue();
@@ -2851,9 +2865,12 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var by = h('input', { type: 'text', id: 'rep-by', maxlength: '60', placeholder: 'ชื่อผู้บันทึก' });
     var me = PD.user && PD.user(), isMgr = !!(me && me.r === 'manager');      // ผู้จัดการที่เข้าใช้เครื่องนี้อยู่แล้ว ไม่ต้องใส่ PIN ซ้ำ
     by.value = isMgr ? whoName(me) : ''; try { by.value = by.value || localStorage.getItem('pallet-check:stock-by') || ''; } catch (e) { /* ไม่เป็นไร */ }
-    var btn = h('button', { type: 'submit', class: 'btn primary', text: done ? 'บันทึกทับรายงานสัปดาห์นี้' : 'บันทึกรายงานสัปดาห์นี้' });
+    var btn = h('button', { type: 'submit', class: 'btn', text: done ? 'บันทึกทับรายงานสัปดาห์นี้' : 'บันทึกรายงานสัปดาห์นี้', onclick: function () { wantLine = false; } });
+    var ln = done && done.line, wantLine = false;
+    var lineBtn = h('button', { type: 'submit', class: 'btn primary', text: '📨 บันทึก + ส่งเข้า LINE ' + LINE_GROUP, onclick: function () { wantLine = true; } });
     var form = h('form', { class: 'rep-save-form', onsubmit: function (ev) {
       ev.preventDefault(); if (repState.busy) return;
+      if (wantLine && ln && ln.s === 'ส่งแล้ว' && !confirm('สัปดาห์นี้ส่งเข้า LINE ไปแล้ว — ส่งอีกครั้ง?')) return;
       if (!isMgr && !pin.value.trim()) { msg.textContent = 'ใส่ PIN ผู้จัดการก่อน'; pin.focus(); return; }
       repState.busy = true; btn.disabled = true; msg.textContent = isMgr ? 'กำลังบันทึก…' : 'กำลังตรวจ PIN…';
       (isMgr ? Promise.resolve(me) : PD.verify(pin.value)).then(function (u) {
@@ -2862,19 +2879,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         try { localStorage.setItem('pallet-check:stock-by', by.value.trim()); } catch (e) { /* ไม่เป็นไร */ }
         var data = { outRange: rep.ro, inRange: rep.ri, out: rep.out, inMatch: rep.inn, inOther: rep.notCount, inAll: rep.allIn, diff: rep.diff,
           late: rep.nb[0].pal, again: rep.nb[1].pal, road: rep.nb[2].pal, nbTrips: rep.nbTrips };
-        return fetch(stock.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: stock.cfg.token, action: 'save', week: wk, values: {}, note: repNote(data, by.value.trim()), by: by.value.trim() }) })
+        return fetch(stock.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: stock.cfg.token, action: 'save', week: wk, values: {}, note: repNote(data, by.value.trim(), wantLine), by: by.value.trim() }) })
           .then(function (r) { return r.json(); });
       }).then(function (d) {
         if (!d || !d.ok) throw Object.assign(new Error('rep'), { code: d && d.error });
         repState.busy = false; stockApply(d);
-        var m = document.querySelector('#report-box .rep-save .rep-msg'); if (m) m.textContent = 'บันทึกรายงานแล้ว ' + fmtClock(new Date()) + ' — สัปดาห์ ' + core.fmtDate(wk);
+        var m = document.querySelector('#report-box .rep-save .rep-msg'); if (m) m.textContent = (wantLine ? 'บันทึกแล้ว และส่งคำขอเข้า LINE แล้ว (รอเครื่องส่งไลน์) ' : 'บันทึกรายงานแล้ว ') + fmtClock(new Date()) + ' — สัปดาห์ ' + core.fmtDate(wk);
       }).catch(function (e) {
         msg.textContent = e && e.code === 'pin' ? 'PIN ไม่ถูกต้อง — เฉพาะผู้จัดการบันทึกรายงานได้' : stockErr(e && e.code);
       }).then(function () { repState.busy = false; btn.disabled = false; });
-    } }, isMgr ? null : h('label', null, 'PIN ผู้จัดการ', pin), h('label', null, 'ผู้บันทึก', by), btn);
+    } }, isMgr ? null : h('label', null, 'PIN ผู้จัดการ', pin), h('label', null, 'ผู้บันทึก', by), lineBtn, btn);
     var wrap = h('div', { class: 'rep-save' },
       h('h4', { text: 'บันทึกรายงานประจำสัปดาห์ (ผู้จัดการกดสัปดาห์ละครั้ง)' }),
       h('p', { class: 'hint', text: 'สัปดาห์ ' + weekText(wk) + ' — ' + (done ? 'บันทึกแล้วโดย ' + (done.savedBy || '–') + (done.savedAt ? ' · ' + fmtStamp(done.savedAt) : '') + ' (กดอีกครั้ง = แทนที่ด้วยตัวเลขล่าสุด)' : 'ยังไม่ได้บันทึก') + ' · เก็บไว้ใน Google Sheet แผ่น “ยอดรายสัปดาห์” ช่องหมายเหตุ' }),
+      ln ? h('p', { class: 'line-st ' + (ln.s === 'ส่งแล้ว' ? 'ok' : ln.s === 'ส่งไม่สำเร็จ' ? 'bad' : 'wait') },
+        'LINE ' + LINE_GROUP + ': ' + (ln.s === 'รอส่ง' ? '📨 รอส่ง — เครื่องส่งไลน์จะส่งให้อัตโนมัติ' : ln.s === 'กำลังส่ง' ? '⏳ กำลังส่ง' : ln.s === 'ส่งแล้ว' ? '✓ ส่งแล้ว' : '⚠ ส่งไม่สำเร็จ — กดส่งใหม่ได้') + (ln.at ? ' (' + ln.at + ')' : '')) : null,
       form, msg);
     if (stock.reports.length) {
       var sg = function (n) { return n == null ? '–' : n > 0 ? 'ขาด ' + fmt(n) : n < 0 ? 'เกิน ' + fmt(-n) : 'ครบ'; };
