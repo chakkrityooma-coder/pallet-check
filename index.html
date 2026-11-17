@@ -536,7 +536,6 @@ table.ck th, table.ck td { font-size:.875rem; }
       <form class="setup-row" id="pin-form" autocomplete="off">
         <input type="password" id="setup-pin-input" inputmode="numeric" autocomplete="off" spellcheck="false" aria-label="PIN" placeholder="PIN">
         <button type="submit" class="btn primary" id="btn-pin">ปลดล็อกและดึงข้อมูล</button>
-        <label class="pin-show"><input type="checkbox" id="pin-show"> แสดง PIN</label>
       </form>
     </div>
     <details class="paste" id="setup-linkbox" open>
@@ -3750,7 +3749,6 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
               });
             });
             $('#setup-pin-input').addEventListener('input', function (e) { var v = window.PalletDrive.normPin(e.target.value); if (v !== e.target.value) e.target.value = v; });   // แป้นไทย/เลขไทย → ตัวเลข
-            $('#pin-show').addEventListener('change', function (e) { $('#setup-pin-input').type = e.target.checked ? 'text' : 'password'; });
             $('#setup-ver').textContent = 'รหัสรุ่นของหน้านี้: ' + window.PalletDrive.lockId();
             $('#setup-pin-input').focus();
           } else {
