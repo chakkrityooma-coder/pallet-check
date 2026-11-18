@@ -2813,7 +2813,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   // ---------- รายงานแบบรูปภาพ (ตาราง ไม่ใช่การ์ด) — บันทึกเป็นรูป / คัดลอก / พิมพ์ ----------
   var LINE_GROUP = 'คลังสำนักงานใหญ่';
-  var LINE_ENABLED = false;      // ปิดปุ่มส่งเข้า LINE อัตโนมัติ (ยังไม่มีตัวส่ง) — ใช้ปุ่มคัดลอกรูป/ส่ง แล้ววางในไลน์เอง
+  var LINE_ENABLED = true;       // ปุ่มส่งเข้า LINE: รูปเข้าคิว แล้วคอมประจำ (โปรแกรมส่งไลน์ของตกค้าง) ส่งเข้ากลุ่ม
   var reportOpen = false, repState = { box: null, rep: null, busy: false };
   function todayIso() { var t = new Date(); return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2); }
   // รายงานรายสัปดาห์เก็บเป็นข้อความในช่อง "หมายเหตุ" ของแถวสัปดาห์นั้น (แผ่น "ยอดรายสัปดาห์") — ใช้สคริปต์เดิมได้ ไม่ต้องแก้โค้ด Apps Script
