@@ -2813,6 +2813,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
   // ---------- รายงานแบบรูปภาพ (ตาราง ไม่ใช่การ์ด) — บันทึกเป็นรูป / คัดลอก / พิมพ์ ----------
   var LINE_GROUP = 'คลังสำนักงานใหญ่';
+  var LINE_ENABLED = false;      // ปิดปุ่มส่งเข้า LINE อัตโนมัติ (ยังไม่มีตัวส่ง) — ใช้ปุ่มคัดลอกรูป/ส่ง แล้ววางในไลน์เอง
   var reportOpen = false, repState = { box: null, rep: null, busy: false };
   function todayIso() { var t = new Date(); return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2); }
   // รายงานรายสัปดาห์เก็บเป็นข้อความในช่อง "หมายเหตุ" ของแถวสัปดาห์นั้น (แผ่น "ยอดรายสัปดาห์") — ใช้สคริปต์เดิมได้ ไม่ต้องแก้โค้ด Apps Script
@@ -3120,7 +3121,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     var msg = h('span', { class: 'rep-msg', role: 'status' });
     var text = repText(rep);
     var acts = h('div', { class: 'rep-acts' },
-      stock.cfg ? h('button', { type: 'button', class: 'btn line', text: '🟢 ส่งเข้า LINE ' + LINE_GROUP, onclick: function () { lineSend(cv, rep, msg, lineRow); } }) : null,
+      LINE_ENABLED && stock.cfg ? h('button', { type: 'button', class: 'btn line', text: '🟢 ส่งเข้า LINE ' + LINE_GROUP, onclick: function () { lineSend(cv, rep, msg, lineRow); } }) : null,
       h('button', { type: 'button', class: 'btn primary', text: '📤 ส่ง (รูป + ข้อความ)', onclick: function () {
         cv.toBlob(function (blob) {
           var file = null; try { file = new File([blob], name, { type: 'image/png' }); } catch (e) { /* เบราว์เซอร์เก่า */ }
@@ -3152,8 +3153,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     acts.appendChild(msg);
     box.appendChild(acts);
     var lineRow = h('div', { class: 'line-row' });
-    lineInfo(lineRow);
-    box.appendChild(lineRow);
+    if (LINE_ENABLED) { lineInfo(lineRow); box.appendChild(lineRow); }
     box.appendChild(h('img', { class: 'rep-img', src: url, alt: 'รายงานตรวจยอดพาเลท: ปล่อยออก ' + fmt(rep.out) + ' รวมรับกลับเข้า ' + fmt(rep.allIn) + ' ผลต่าง ' + rep.diffWord + ' ' + fmt(rep.diffAbs) + ' พาเลท' }));
     if (stock.cfg) box.appendChild(repSaveBox(rep));
   }
